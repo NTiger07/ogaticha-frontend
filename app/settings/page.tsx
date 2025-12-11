@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
 
 export default function SettingsPage() {
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [settings, setSettings] = useState({
         darkMode: false,
         notifications: true,
@@ -23,18 +25,24 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
-            <Sidebar />
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className="lg:ml-64 min-h-screen pb-20 lg:pb-8">
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-20 lg:pb-8 transition-all duration-300`}>
                 <header className="bg-[#4a148c] px-4 lg:px-8 py-6 lg:py-8">
-                    <div className="max-w-7xl mx-auto flex items-center gap-4">
-                        <Link href="/" className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors lg:hidden">
-                            <span className="material-symbols-outlined text-white text-2xl">arrow_back</span>
-                        </Link>
-                        <div>
-                            <h1 className="text-3xl lg:text-4xl font-bold text-white">Settings</h1>
-                            <p className="hidden lg:block text-white/80 mt-1">Customize your OgaTicha experience</p>
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center">
+                                <span className="material-symbols-outlined">menu</span>
+                            </button>
+                            <Link href="/" className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors lg:hidden">
+                                <span className="material-symbols-outlined text-white text-2xl">arrow_back</span>
+                            </Link>
+                            <div>
+                                <h1 className="text-3xl lg:text-4xl font-bold text-white">Settings</h1>
+                                <p className="hidden lg:block text-white/80 mt-1">Customize your OgaTicha experience</p>
+                            </div>
                         </div>
+                        
                     </div>
                 </header>
 

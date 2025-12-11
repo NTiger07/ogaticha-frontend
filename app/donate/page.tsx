@@ -1,8 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 
 export default function DonatePage() {
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     const goals = [
         { id: 1, name: 'Tola', title: 'Help Tola buy a Braille Keyboard', description: 'Tola needs accessible hardware for her computer science classes.', category: 'Hardware', raised: 325, goal: 500, donors: 12, donateAmount: 50, imageGradient: 'from-purple-900 to-purple-700' },
         { id: 2, name: 'Obi', title: 'Support Obi with Speech Software', description: 'Obi needs a screen reader license to access digital textbooks.', category: 'Software', raised: 120, goal: 300, donors: 4, donateAmount: 100, imageGradient: 'from-blue-900 to-blue-700' },
@@ -14,16 +18,21 @@ export default function DonatePage() {
 
     return (
         <div className="min-h-screen bg-[#2e004f]">
-            <Sidebar />
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className="lg:ml-64 min-h-screen pb-20 lg:pb-8">
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-20 lg:pb-8 transition-all duration-300`}>
                 <header className="sticky top-0 z-20 bg-[#4a148c] border-b border-white/10 px-4 lg:px-8 py-4 lg:py-6 shadow-lg">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex items-center gap-3 lg:gap-4">
-                            <span className="material-symbols-outlined text-[#f9f506] text-3xl lg:text-5xl">volunteer_activism</span>
-                            <div>
-                                <h1 className="text-2xl lg:text-4xl font-bold text-white">Student Goals</h1>
-                                <p className="hidden lg:block text-white/80 mt-1">Directly fund accessibility tools for students</p>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 lg:gap-4">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center">
+                                    <span className="material-symbols-outlined">menu</span>
+                                </button>
+                                <span className="material-symbols-outlined text-[#f9f506] text-3xl lg:text-5xl">volunteer_activism</span>
+                                <div>
+                                    <h1 className="text-2xl lg:text-4xl font-bold text-white">Student Goals</h1>
+                                    <p className="hidden lg:block text-white/80 mt-1">Directly fund accessibility tools for students</p>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,9 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
 
 export default function ClassroomPage() {
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     const lectures = [
         { id: 1, title: 'Intro to Linear Algebra', professor: 'Prof. Adewale', date: 'Oct 12', color: 'red' },
         { id: 2, title: 'Modern European History', professor: 'Dr. Smith', date: 'Oct 10', color: 'blue' },
@@ -15,13 +19,16 @@ export default function ClassroomPage() {
 
     return (
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
-            <Sidebar />
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className="lg:ml-64 min-h-screen pb-20 lg:pb-8">
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-20 lg:pb-8 transition-all duration-300`}>
                 <header className="sticky top-0 z-20 bg-white/95 dark:bg-[#1a1a0b]/95 backdrop-blur-md border-b border-gray-200 dark:border-[#33331a] px-4 lg:px-8 py-4 lg:py-6">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 lg:gap-4">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-full bg-gray-200 dark:bg-[#33331a] hover:border-[#f9f506] border-2 border-transparent transition-colors flex items-center justify-center">
+                                    <span className="material-symbols-outlined">menu</span>
+                                </button>
                                 <div className="lg:hidden w-10 h-10 bg-[#f9f506] rounded-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-2xl text-[#181811]">school</span>
                                 </div>

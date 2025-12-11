@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
 
 export default function TutorPage() {
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [message, setMessage] = useState('');
 
     const handleSend = () => {
@@ -14,14 +17,17 @@ export default function TutorPage() {
 
     return (
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
-            <Sidebar />
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className="lg:ml-64 min-h-screen flex flex-col pb-20 lg:pb-0">
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen flex flex-col pb-20 lg:pb-0 transition-all duration-300`}>
                 {/* Header */}
                 <header className="bg-[#4a148c] px-4 lg:px-8 py-4 lg:py-6 text-white border-b border-white/10">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 lg:gap-4">
+                                <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center">
+                                    <span className="material-symbols-outlined">menu</span>
+                                </button>
                                 <span className="material-symbols-outlined text-3xl lg:text-5xl text-[#f9f506]">school</span>
                                 <div>
                                     <h1 className="text-2xl lg:text-4xl font-bold">AI Tutor</h1>

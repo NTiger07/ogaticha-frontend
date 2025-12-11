@@ -1,13 +1,66 @@
 @import "tailwindcss";
 
 :root {
+  /* Brand */
   --color-primary: #f9f506;
-  --color-background-light: #f8f8f5;
-  --color-background-dark: #23220f;
-  --color-text-dark: #181811;
-  --color-text-light: #f5f5f0;
-  --color-brand-purple: #4a148c;
-  --color-brand-purple-dark: #2e004f;
+  --color-primary-600: #e6d400;
+  --color-secondary: #4a148c;
+  --color-accent: #00bcd4;
+
+  /* Background / surface */
+  --color-bg: #f8f8f5;
+  --color-surface: #ffffff;
+  --color-muted-surface: #f2f2f0;
+  --color-border: #e6e6e3;
+
+  /* Text */
+  --color-text: #181811;
+  --color-text-muted: #55554a;
+  --color-text-inverse: #f5f5f0;
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-error: #dc2626;
+
+  /* Semantic shades */
+  --shade-100: #ffffff;
+  --shade-200: #f8f8f5;
+  --shade-300: #efefec;
+  --shade-400: #e6e6e3;
+  --shade-500: #dcdcd9;
+
+  /* Accessibility helpers */
+  --focus-ring: 0 0 0 3px rgba(74,20,140,0.12);
+}
+
+/* Dark theme variables applied when data-theme="dark" on <html> */
+[data-theme="dark"] {
+  --color-primary: #f9e73a;
+  --color-primary-600: #e6d400;
+  --color-secondary: #b39ddb;
+  --color-accent: #00bcd4;
+
+  --color-bg: #121110;
+  --color-surface: #171616;
+  --color-muted-surface: #1f1e1d;
+  --color-border: #2a2a27;
+
+  --color-text: #f5f5f0;
+  --color-text-muted: #cfcfc9;
+  --color-text-inverse: #121110;
+
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #fb7185;
+
+  --shade-100: #0b0b0b;
+  --shade-200: #141414;
+  --shade-300: #1f1f1f;
+  --shade-400: #2a2a2a;
+  --shade-500: #363636;
+
+  --focus-ring: 0 0 0 3px rgba(249,181,6,0.12);
 }
 
 @theme inline {
@@ -16,6 +69,24 @@
 
 body {
   font-family: "Spline Sans", sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+/* Utility for visually-hidden text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .material-symbols-outlined {
@@ -31,4 +102,22 @@ body {
   word-wrap: normal;
   direction: ltr;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Theme toggle button styles (simple, unobtrusive) */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle:focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }

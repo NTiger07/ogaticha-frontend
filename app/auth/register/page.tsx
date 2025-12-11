@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -9,19 +10,31 @@ export default function RegisterPage() {
         email: '',
         password: '',
         confirmPassword: '',
+        role: 'student', // default role
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         });
     };
 
+    const router = useRouter();
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle registration logic
+        // TODO: replace with real registration API integration
         console.log('Register:', formData);
+
+        // Redirect based on selected role
+        if (formData.role === 'lecturer') {
+            router.push('/lecturer');
+        } else if (formData.role === 'companion') {
+            router.push('/companion');
+        } else {
+            router.push('/'); // default student dashboard
+        }
     };
 
     return (
@@ -82,6 +95,28 @@ export default function RegisterPage() {
                             placeholder="your.email@example.com"
                             required
                         />
+                    </div>
+
+                    {/* Account Type (Role) */}
+                    <div>
+                        <label
+                            htmlFor="role"
+                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                        >
+                            Account Type
+                        </label>
+                        <select
+                            id="role"
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                        >
+                            <option value="student">Student (default)</option>
+                            <option value="lecturer">Lecturer</option>
+                            <option value="companion">Companion</option>
+                           
+                        </select>
                     </div>
 
                     {/* Password Input */}
