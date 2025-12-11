@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -12,6 +13,18 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true, onToggleDesktop }: SidebarProps) {
     const pathname = usePathname();
+    const [isOnline, setIsOnline] = useState(true);
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     const isActive = (path: string) => pathname === path;
 
@@ -44,6 +57,13 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
                         </span>
                     </button>
                 </div>
+
+                {/* Offline Indicator */}
+                {isDesktopOpen && !isOnline && (
+                    <div className="px-6 py-2 bg-red-100 dark:bg-red-900 border-b border-gray-200 dark:border-[#33331a]">
+                        <p className="text-sm text-red-600 dark:text-red-400 font-semibold">Offline Mode</p>
+                    </div>
+                )}
 
                 {/* Navigation */}
                 <nav className="flex-1 p-2 space-y-1">
@@ -96,6 +116,13 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
+
+                {/* Offline Indicator */}
+                {!isOnline && (
+                    <div className="px-6 py-2 bg-red-100 dark:bg-red-900 border-b border-gray-200 dark:border-[#33331a]">
+                        <p className="text-sm text-red-600 dark:text-red-400 font-semibold">Offline Mode</p>
+                    </div>
+                )}
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2">

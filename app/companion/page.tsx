@@ -1,7 +1,6 @@
  'use client';
 import { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
-import BottomNav from '../../components/BottomNav';
 import Link from 'next/link';
 
 export default function CompanionDashboard() {
@@ -71,7 +70,7 @@ export default function CompanionDashboard() {
                 </div>
             </main>
 
-            <BottomNav />
+           
         </div>
     );
 }

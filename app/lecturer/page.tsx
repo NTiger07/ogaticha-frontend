@@ -1,14 +1,14 @@
  'use client';
 
 import { useState } from 'react';
-import students from '../../data/students.json';
+import { useStudents } from '../../components/useStudents';
 import Sidebar from '../../components/Sidebar';
-import BottomNav from '../../components/BottomNav';
 import Link from 'next/link';
 
 export default function LecturerDashboard() {
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { students, loading } = useStudents();
 
     return (
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
@@ -44,28 +44,32 @@ export default function LecturerDashboard() {
                         <button className="text-sm lg:text-base font-semibold text-[#8c8b5f] dark:text-[#b0af85] hover:text-[#181811] dark:hover:text-[#f9f506] transition-colors">View all</button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {students.map((s) => (
-                            <article key={s.id} className="bg-white dark:bg-[#23220f] border-2 border-gray-200 dark:border-[#33331a] rounded-xl p-5 shadow-sm">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-[#33331a] flex items-center justify-center text-xl font-bold">{s.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
-                                    <div>
-                                        <h3 className="font-bold text-[#181811] dark:text-white">{s.name}</h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">{s.email}</p>
+                    {loading ? (
+                        <p className="text-gray-600 dark:text-gray-400">Loading students...</p>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {students.map((s) => (
+                                <article key={s.id} className="bg-white dark:bg-[#23220f] border-2 border-gray-200 dark:border-[#33331a] rounded-xl p-5 shadow-sm">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-[#33331a] flex items-center justify-center text-xl font-bold">{s.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
+                                        <div>
+                                            <h3 className="font-bold text-[#181811] dark:text-white">{s.name}</h3>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">{s.email}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-4 flex items-center gap-2">
-                                    <button className="flex-1 h-10 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] rounded-full flex items-center justify-center gap-2 font-bold text-sm transition-colors">
-                                        <span className="material-symbols-outlined">visibility</span>
-                                        View Profile
-                                    </button>
-                                    <button className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#33331a] flex items-center justify-center">
-                                        <span className="material-symbols-outlined">email</span>
-                                    </button>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
+                                    <div className="mt-4 flex items-center gap-2">
+                                        <button className="flex-1 h-10 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] rounded-full flex items-center justify-center gap-2 font-bold text-sm transition-colors">
+                                            <span className="material-symbols-outlined">visibility</span>
+                                            View Profile
+                                        </button>
+                                        <button className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#33331a] flex items-center justify-center">
+                                            <span className="material-symbols-outlined">email</span>
+                                        </button>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
 
                     <button className="fixed bottom-28 right-6 lg:bottom-8 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-[#181811] dark:bg-white text-[#f9f506] dark:text-[#181811] rounded-full shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-110 transition-all z-30">
                         <span className="material-symbols-outlined text-3xl">add</span>
@@ -73,7 +77,7 @@ export default function LecturerDashboard() {
                 </div>
             </main>
 
-            <BottomNav />
+            
         </div>
     );
 }
