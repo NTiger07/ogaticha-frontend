@@ -72,7 +72,7 @@ export default function ClassroomPage() {
                                         <div className="flex items-center gap-2 mt-auto">
                                             <button className="flex-1 h-10 lg:h-12 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] rounded-full flex items-center justify-center gap-2 font-bold text-sm lg:text-base transition-colors">
                                                 <span className="material-symbols-outlined text-lg lg:text-xl">auto_awesome</span>
-                                                <span className="hidden sm:inline">Summarize</span>
+                                                <span className="hidden sm:inline ">Summarize</span>
                                             </button>
                                             <button className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 border-gray-200 dark:border-[#33331a] flex items-center justify-center text-[#181811] dark:text-white hover:bg-gray-100 dark:hover:bg-[#33331a] transition-colors">
                                                 <span className="material-symbols-outlined">more_vert</span>

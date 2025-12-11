@@ -34,8 +34,8 @@
   --focus-ring: 0 0 0 3px rgba(74,20,140,0.12);
 }
 
-/* Dark theme variables applied when data-theme="dark" on <html> */
-[data-theme="dark"] {
+/* Dark theme variables applied when `.dark` class is present on <html> */
+.dark {
   --color-primary: #f9e73a;
   --color-primary-600: #e6d400;
   --color-secondary: #b39ddb;
@@ -63,6 +63,64 @@
   --focus-ring: 0 0 0 3px rgba(249,181,6,0.12);
 }
 
+/* High contrast mode applied when `.high-contrast` class is present on <html> */
+.high-contrast {
+  --color-primary: #ffff00;
+  --color-primary-600: #ffff00;
+  --color-secondary: #0000ff;
+  --color-accent: #00ffff;
+
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-muted-surface: #f0f0f0;
+  --color-border: #000000;
+
+  --color-text: #000000;
+  --color-text-muted: #333333;
+  --color-text-inverse: #ffffff;
+
+  --color-success: #008000;
+  --color-warning: #ffa500;
+  --color-error: #ff0000;
+
+  --shade-100: #ffffff;
+  --shade-200: #f0f0f0;
+  --shade-300: #e0e0e0;
+  --shade-400: #d0d0d0;
+  --shade-500: #c0c0c0;
+
+  --focus-ring: 0 0 0 3px #000000;
+}
+
+/* High contrast dark mode applied when both `.high-contrast` and `.dark` classes are present */
+.dark.high-contrast {
+  --color-primary: #ffff00;
+  --color-primary-600: #ffff00;
+  --color-secondary: #ffff00;
+  --color-accent: #00ffff;
+
+  --color-bg: #000000;
+  --color-surface: #000000;
+  --color-muted-surface: #1a1a1a;
+  --color-border: #ffffff;
+
+  --color-text: #ffffff;
+  --color-text-muted: #e0e0e0;
+  --color-text-inverse: #000000;
+
+  --color-success: #00ff00;
+  --color-warning: #ffff00;
+  --color-error: #ff0000;
+
+  --shade-100: #000000;
+  --shade-200: #1a1a1a;
+  --shade-300: #333333;
+  --shade-400: #4d4d4d;
+  --shade-500: #666666;
+
+  --focus-ring: 0 0 0 3px #ffff00;
+}
+
 @theme inline {
   --font-display: "Spline Sans", sans-serif;
 }
@@ -74,6 +132,34 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 180ms ease, color 180ms ease;
+}
+
+/* Font size classes */
+.font-small {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.font-small button, .font-small input, .font-small select, .font-small textarea {
+  font-size: 14px;
+}
+
+.font-medium {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.font-medium button, .font-medium input, .font-medium select, .font-medium textarea {
+  font-size: 16px;
+}
+
+.font-large {
+  font-size: 20px;
+  line-height: 1.7;
+}
+
+.font-large button, .font-large input, .font-large select, .font-large textarea {
+  font-size: 20px;
 }
 
 /* Utility for visually-hidden text */

@@ -156,29 +156,7 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
                 </div>
             </aside>
 
-            {/* Mobile Bottom Nav */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a0b] border-t border-gray-200 dark:border-[#33331a] z-50 safe-area-inset-bottom">
-                <div className="flex justify-around items-center h-16 px-2">
-                    {navItems.slice(0, 3).map((item) => (
-                        <Link
-                            key={item.path}
-                            href={item.path}
-                            className="flex flex-col items-center gap-1 py-2 px-4 min-w-[70px]"
-                        >
-                            <div className={`flex items-center justify-center transition-colors ${isActive(item.path) ? 'text-[#f9f506]' : 'text-gray-600 dark:text-gray-400'
-                                }`}>
-                                <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-                            </div>
-                            <span className={`text-xs font-semibold ${isActive(item.path)
-                                    ? 'text-[#181811] dark:text-[#f9f506]'
-                                    : 'text-gray-600 dark:text-gray-400'
-                                }`}>
-                                {item.label}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            </nav>
+            {/* Mobile bottom navigation removed */}
         </>
     );
 }

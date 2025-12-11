@@ -1,26 +1,142 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
+import { useVoiceMode } from '../../hooks/useVoiceMode';
 
 export default function SettingsPage() {
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [settings, setSettings] = useState({
-        darkMode: false,
-        notifications: true,
-        voiceMode: false,
-        fontSize: 'medium',
-        highContrast: false,
+    const [settings, setSettings] = useState<{
+        darkMode: boolean;
+        notifications: boolean;
+        voiceMode: boolean;
+        fontSize: string;
+        highContrast: boolean;
+    }>(() => {
+        const initial: {
+            darkMode: boolean;
+            notifications: boolean;
+            voiceMode: boolean;
+            fontSize: string;
+            highContrast: boolean;
+        } = {
+            darkMode: false,
+            notifications: true,
+            voiceMode: true, // enabled by default
+            fontSize: 'medium',
+            highContrast: false,
+        };
+        try {
+            const stored = localStorage.getItem('settings');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                Object.assign(initial, parsed);
+            } else {
+                // Fallback for theme
+                const t = localStorage.getItem('theme');
+                if (t === 'dark') initial.darkMode = true;
+                else if (t === 'light') initial.darkMode = false;
+                else if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) initial.darkMode = true;
+            }
+        } catch {
+            // ignore
+        }
+
+        // Apply initial settings
+        if (typeof window !== 'undefined') {
+            try {
+                if (initial.darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+
+                if (initial.highContrast) document.documentElement.classList.add('high-contrast');
+                else document.documentElement.classList.remove('high-contrast');
+
+                document.body.className = `font-${initial.fontSize}`;
+            } catch {
+                // ignore
+            }
+        }
+
+        return initial;
     });
 
+    const { announce } = useVoiceMode(settings.voiceMode);
+
+    // Apply settings to DOM when they change
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                // Apply dark mode
+                if (settings.darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+
+                // Apply high contrast
+                if (settings.highContrast) {
+                    document.documentElement.classList.add('high-contrast');
+                } else {
+                    document.documentElement.classList.remove('high-contrast');
+                }
+
+                // Apply font size
+                document.body.className = `font-${settings.fontSize}`;
+            } catch {
+                // ignore
+            }
+        }
+    }, [settings.darkMode, settings.highContrast, settings.fontSize]);
+
     const handleToggle = (setting: keyof typeof settings) => {
-        setSettings({ ...settings, [setting]: !settings[setting] });
+        const newVal = !settings[setting];
+        const newSettings = { ...settings, [setting]: newVal };
+        setSettings(newSettings);
+
+        // Persist
+        try {
+            localStorage.setItem('settings', JSON.stringify(newSettings));
+        } catch {
+            // ignore
+        }
+
+        // Also update theme in localStorage for backward compatibility
+        if (setting === 'darkMode') {
+            try {
+                localStorage.setItem('theme', newVal ? 'dark' : 'light');
+                announce(newVal ? 'Dark mode enabled' : 'Dark mode disabled');
+            } catch {
+                // ignore
+            }
+        } else if (setting === 'highContrast') {
+            announce(newVal ? 'High contrast mode enabled' : 'High contrast mode disabled');
+        } else if (setting === 'notifications') {
+            announce(newVal ? 'Notifications enabled' : 'Notifications disabled');
+        } else if (setting === 'voiceMode') {
+            if (newVal) {
+                const utterance = new SpeechSynthesisUtterance('Voice mode enabled');
+                window.speechSynthesis.speak(utterance);
+            } else {
+                announce('Voice mode disabled');
+            }
+        }
     };
 
     const handleFontSizeChange = (size: string) => {
-        setSettings({ ...settings, fontSize: size });
+        const newSettings = { ...settings, fontSize: size };
+        setSettings(newSettings);
+
+        // Persist
+        try {
+            localStorage.setItem('settings', JSON.stringify(newSettings));
+        } catch {
+            // ignore
+        }
+
+        // Announce change
+        announce(`Font size changed to ${size}`);
     };
 
     return (
@@ -76,9 +192,9 @@ export default function SettingsPage() {
                             </h2>
                             <div className="space-y-3 lg:space-y-4">
                                 {[
-                                    { key: 'darkMode', icon: 'dark_mode', title: 'Dark Mode', desc: 'Enable dark theme' },
-                                    { key: 'highContrast', icon: 'contrast', title: 'High Contrast', desc: 'Increase color contrast' }
-                                ].map((item) => (
+                                        { key: 'darkMode', icon: 'dark_mode', title: 'Dark Mode', desc: 'Enable dark theme' },
+                                        { key: 'highContrast', icon: 'contrast', title: 'High Contrast', desc: 'Increase color contrast' }
+                                    ].map((item) => (
                                     <div key={item.key} className="bg-white dark:bg-[#1a1a0b] rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200 dark:border-[#33331a]">
                                         <div className="flex items-center gap-3 lg:gap-4">
                                             <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-2xl lg:text-3xl">{item.icon}</span>
@@ -89,6 +205,7 @@ export default function SettingsPage() {
                                         </div>
                                         <button
                                             onClick={() => handleToggle(item.key as keyof typeof settings)}
+                                            aria-label={`Toggle ${item.title}`}
                                             className={`w-14 h-8 lg:w-16 lg:h-9 rounded-full transition-colors ${settings[item.key as keyof typeof settings] ? 'bg-[#f9f506]' : 'bg-gray-300'}`}
                                         >
                                             <div className={`w-6 h-6 lg:w-7 lg:h-7 bg-white rounded-full shadow-md transform transition-transform ${settings[item.key as keyof typeof settings] ? 'translate-x-7 lg:translate-x-8' : 'translate-x-1'}`}></div>
@@ -106,6 +223,7 @@ export default function SettingsPage() {
                                             <button
                                                 key={size}
                                                 onClick={() => handleFontSizeChange(size)}
+                                                aria-label={`Select ${size} font size`}
                                                 className={`py-2.5 lg:py-3 rounded-lg font-semibold text-sm lg:text-base transition-all ${settings.fontSize === size ? 'bg-[#f9f506] text-[#181811]' : 'bg-gray-100 dark:bg-[#2c2c15] text-gray-600 dark:text-gray-400'}`}
                                             >
                                                 {size.charAt(0).toUpperCase() + size.slice(1)}
@@ -137,6 +255,7 @@ export default function SettingsPage() {
                                         </div>
                                         <button
                                             onClick={() => handleToggle(item.key as keyof typeof settings)}
+                                            aria-label={`Toggle ${item.title}`}
                                             className={`w-14 h-8 lg:w-16 lg:h-9 rounded-full transition-colors ${settings[item.key as keyof typeof settings] ? 'bg-[#f9f506]' : 'bg-gray-300'}`}
                                         >
                                             <div className={`w-6 h-6 lg:w-7 lg:h-7 bg-white rounded-full shadow-md transform transition-transform ${settings[item.key as keyof typeof settings] ? 'translate-x-7 lg:translate-x-8' : 'translate-x-1'}`}></div>

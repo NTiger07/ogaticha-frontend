@@ -8,10 +8,10 @@ export default function DonatePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const goals = [
-        { id: 1, name: 'Tola', title: 'Help Tola buy a Braille Keyboard', description: 'Tola needs accessible hardware for her computer science classes.', category: 'Hardware', raised: 325, goal: 500, donors: 12, donateAmount: 50, imageGradient: 'from-purple-900 to-purple-700' },
-        { id: 2, name: 'Obi', title: 'Support Obi with Speech Software', description: 'Obi needs a screen reader license to access digital textbooks.', category: 'Software', raised: 120, goal: 300, donors: 4, donateAmount: 100, imageGradient: 'from-blue-900 to-blue-700' },
-        { id: 3, name: 'Class 4B', title: 'Accessible Tablets for Class 4B', description: 'Equip the entire classroom with tactile learning tablets.', category: 'Classroom', raised: 850, goal: 2000, donors: 28, donateAmount: 0, imageGradient: 'from-green-900 to-green-700' },
-        { id: 4, name: 'Amina', title: 'Speech-to-Text Software for Amina', description: 'Help Amina with dyslexia access better learning tools.', category: 'Software', raised: 200, goal: 400, donors: 8, donateAmount: 75, imageGradient: 'from-pink-900 to-pink-700' },
+        { id: 1,  title: 'Help Tola buy a Braille Keyboard', description: 'Donate to Tola for accessible hardware for her computer science classes.', category: 'Hardware', raised: 325, goal: 500, donors: 12, imageGradient: 'from-purple-900 to-purple-700' },
+        { id: 2,  title: 'Support Obi with Speech Software', description: 'Obi needs a screen reader license to access digital textbooks.', category: 'Software', raised: 120, goal: 300, donors: 4,  imageGradient: 'from-blue-900 to-blue-700' },
+        { id: 3, title: 'Accessible Tablets for Class 4B', description: 'Equip the entire classroom with tactile learning tablets.', category: 'Classroom', raised: 850, goal: 2000, donors: 28,  imageGradient: 'from-green-900 to-green-700' },
+        { id: 4, title: 'Speech-to-Text Software for Amina', description: 'Help Amina with dyslexia access better learning tools.', category: 'Software', raised: 200, goal: 400, donors: 8,  imageGradient: 'from-pink-900 to-pink-700' },
     ];
 
     const calculatePercentage = (raised: number, goal: number) => Math.round((raised / goal) * 100);
