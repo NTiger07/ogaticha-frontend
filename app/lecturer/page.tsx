@@ -14,7 +14,7 @@ export default function LecturerDashboard() {
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-28 lg:pb-8 transition-all duration-300`}>
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-8 transition-all duration-300`}>
                 <header className="sticky top-0 z-20 bg-white/95 dark:bg-[#1a1a0b]/95 backdrop-blur-md border-b border-gray-200 dark:border-[#33331a] px-4 lg:px-8 py-4 lg:py-6">
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -71,13 +71,11 @@ export default function LecturerDashboard() {
                         </div>
                     )}
 
-                    <button className="fixed bottom-28 right-6 lg:bottom-8 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-[#181811] dark:bg-white text-[#f9f506] dark:text-[#181811] rounded-full shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-110 transition-all z-30">
+                    <button className="fixed bottom-8 right-6 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-[#181811] dark:bg-white text-[#f9f506] dark:text-[#181811] rounded-full shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-110 transition-all z-30">
                         <span className="material-symbols-outlined text-3xl">add</span>
                     </button>
                 </div>
             </main>
-
-            
         </div>
     );
 }

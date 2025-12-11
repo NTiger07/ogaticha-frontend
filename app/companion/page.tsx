@@ -16,7 +16,7 @@ export default function CompanionDashboard() {
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-28 lg:pb-8 transition-all duration-300`}>
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-8 transition-all duration-300`}>
                 <header className="sticky top-0 z-20 bg-white/95 dark:bg-[#1a1a0b]/95 backdrop-blur-md border-b border-gray-200 dark:border-[#33331a] px-4 lg:px-8 py-4 lg:py-6">
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -69,8 +69,6 @@ export default function CompanionDashboard() {
                     </div>
                 </div>
             </main>
-
-           
         </div>
     );
 }

@@ -155,8 +155,6 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
                     </Link>
                 </div>
             </aside>
-
-            {/* Mobile bottom navigation removed */}
         </>
     );
 }

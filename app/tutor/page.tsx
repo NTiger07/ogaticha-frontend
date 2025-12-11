@@ -19,7 +19,7 @@ export default function TutorPage() {
         <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
-            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen flex flex-col pb-20 lg:pb-0 transition-all duration-300`}>
+            <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen flex flex-col transition-all duration-300`}>
                 {/* Header */}
                 <header className="bg-[#4a148c] px-4 lg:px-8 py-4 lg:py-6 text-white border-b border-white/10">
                     <div className="max-w-7xl mx-auto">
