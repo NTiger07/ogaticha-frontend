@@ -9,6 +9,9 @@ export * from "./auth";
 // Classroom/AI Tutor
 export * from "./classroom";
 
+// Chat Sessions
+export * from "./chat";
+
 // Sync/Offline
 export * from "./sync";
 

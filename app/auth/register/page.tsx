@@ -45,7 +45,7 @@ export default function RegisterPage() {
             name: formData.fullName,
             email: formData.email,
             password: formData.password,
-            role: formData.role === 'student' ? 'student' : 'teacher',
+            role: formData.role === 'student' ? 'student' : 'lecturer',
             disability_type: formData.disabilityType,
             preferred_mode: formData.preferredMode,
         });
