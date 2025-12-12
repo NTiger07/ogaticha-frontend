@@ -1,11 +1,13 @@
- 'use client';
+'use client';
 
 import { useState } from 'react';
 import { useStudents } from '../../components/useStudents';
 import Sidebar from '../../components/Sidebar';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function LecturerDashboard() {
+    const { user, isAuthenticated } = useAuthStore();
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { students, loading } = useStudents();
@@ -25,7 +27,9 @@ export default function LecturerDashboard() {
                                 <span className="material-symbols-outlined text-2xl text-[#181811]">school</span>
                             </div>
                             <div>
-                                <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">Lecturer Dashboard</h1>
+                                <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">
+                                    {isAuthenticated && user ? `Professor ${user.name}` : 'Lecturer Dashboard'}
+                                </h1>
                                 <p className="hidden lg:block text-gray-600 mt-1">Manage your classes and students</p>
                             </div>
                         </div>
@@ -51,7 +55,7 @@ export default function LecturerDashboard() {
                             {students.map((s) => (
                                 <article key={s.id} className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold">{s.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
+                                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold">{s.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</div>
                                         <div>
                                             <h3 className="font-bold text-[#181811]">{s.name}</h3>
                                             <p className="text-sm text-gray-600">{s.email}</p>

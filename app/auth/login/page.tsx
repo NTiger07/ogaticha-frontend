@@ -2,15 +2,32 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/authStore';
+import { loginUser } from '@/lib/api/auth';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const { setUser, setLoading, setError, isLoading, error, clearError } = useAuthStore();
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle login logic
-        console.log('Login:', { email, password });
+        clearError();
+        setLoading(true);
+
+        const result = await loginUser({ email, password });
+
+        if (result.success) {
+            setUser(result.data.user);
+            router.push('/classroom');
+        } else {
+            setError(result.error);
+        }
+
+        setLoading(false);
     };
 
     return (
@@ -30,6 +47,13 @@ export default function LoginPage() {
                 <p className="text-center text-gray-600 mb-8">
                     Sign in to continue learning
                 </p>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                        <p className="text-sm text-red-600 text-center font-medium">{error}</p>
+                    </div>
+                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -84,10 +108,20 @@ export default function LoginPage() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full py-4 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        disabled={isLoading}
+                        className="w-full py-4 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span>Sign In</span>
-                        <span className="material-symbols-outlined">arrow_forward</span>
+                        {isLoading ? (
+                            <>
+                                <span className="animate-spin material-symbols-outlined">progress_activity</span>
+                                <span>Signing In...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Sign In</span>
+                                <span className="material-symbols-outlined">arrow_forward</span>
+                            </>
+                        )}
                     </button>
                 </form>
 

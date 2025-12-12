@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function ClassroomPage() {
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { user, isAuthenticated } = useAuthStore();
 
     const lectures = [
         { id: 1, title: 'Intro to Linear Algebra', professor: 'Prof. Adewale', date: 'Oct 12', color: 'red' },
@@ -33,7 +35,9 @@ export default function ClassroomPage() {
                                     <span className="material-symbols-outlined text-2xl text-[#181811]">school</span>
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">Classroom</h1>
+                                    <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">
+                                        {isAuthenticated && user ? `Welcome back, ${user.name}` : 'Classroom'}
+                                    </h1>
                                     <p className="hidden lg:block text-gray-600 mt-1">Access your lecture notes and study materials</p>
                                 </div>
                             </div>

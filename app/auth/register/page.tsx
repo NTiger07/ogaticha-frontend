@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRegister } from '@/hooks/useAPI';
-import { DisabilityType, PreferredMode } from '@/lib/api';
+import { registerUser } from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/store/authStore';
+import { DisabilityType, PreferredMode } from '@/lib/types/api';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -17,7 +18,7 @@ export default function RegisterPage() {
         preferredMode: 'text' as PreferredMode,
     });
 
-    const { loading, error, register } = useRegister();
+    const { setLoading, setError, isLoading, error, clearError } = useAuthStore();
     const router = useRouter();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -29,15 +30,18 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        clearError();
 
         // Validate passwords match
         if (formData.password !== formData.confirmPassword) {
-            alert('Passwords do not match!');
+            setError('Passwords do not match!');
             return;
         }
 
+        setLoading(true);
+
         // Call API
-        const success = await register({
+        const result = await registerUser({
             name: formData.fullName,
             email: formData.email,
             password: formData.password,
@@ -46,16 +50,14 @@ export default function RegisterPage() {
             preferred_mode: formData.preferredMode,
         });
 
-        if (success) {
-            // Redirect based on selected role
-            if (formData.role === 'lecturer') {
-                router.push('/lecturer');
-            } else if (formData.role === 'companion') {
-                router.push('/companion');
-            } else {
-                router.push('/classroom');
-            }
+        if (result.success) {
+            // Redirect to login after successful registration
+            router.push('/auth/login?registered=true');
+        } else {
+            setError(result.error);
         }
+
+        setLoading(false);
     };
 
     return (
@@ -75,6 +77,13 @@ export default function RegisterPage() {
                 <p className="text-center text-gray-600 mb-8">
                     Join OgaTicha and start learning
                 </p>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                        <p className="text-sm text-red-600 text-center font-medium">{error}</p>
+                    </div>
+                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -234,10 +243,10 @@ export default function RegisterPage() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={isLoading}
                         className="w-full py-4 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? (
+                        {isLoading ? (
                             <>
                                 <span className="material-symbols-outlined animate-spin">refresh</span>
                                 <span>Creating Account...</span>

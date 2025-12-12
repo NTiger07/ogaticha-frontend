@@ -1,9 +1,11 @@
- 'use client';
+'use client';
 import { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function CompanionDashboard() {
+    const { user, isAuthenticated } = useAuthStore();
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -27,7 +29,9 @@ export default function CompanionDashboard() {
                                 <span className="material-symbols-outlined text-2xl text-[#181811]">school</span>
                             </div>
                             <div>
-                                <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">Companion Dashboard</h1>
+                                <h1 className="text-2xl lg:text-4xl font-bold text-[#181811]">
+                                    {isAuthenticated && user ? `Welcome, ${user.name}` : 'Companion Dashboard'}
+                                </h1>
                                 <p className="hidden lg:block text-gray-600 mt-1">Manage linked students and support</p>
                             </div>
                         </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/lib/store/authStore';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -14,6 +15,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true, onToggleDesktop }: SidebarProps) {
     const pathname = usePathname();
     const [isOnline, setIsOnline] = useState(true);
+    const { user, isAuthenticated, logout, _hasHydrated } = useAuthStore();
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -104,15 +106,47 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
                     {/* Profile Section */}
                     {isDesktopOpen && (
                         <div className="p-4">
-                            <Link href="/auth/login" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f8f8f5] transition-all">
-                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-gray-600">person</span>
+                            {!_hasHydrated ? (
+                                // Loading state while hydrating
+                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#f8f8f5]">
+                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-gray-600">person</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm text-gray-400">Loading...</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-sm text-[#181811]">Guest User</p>
-                                    <p className="text-xs text-gray-500">Sign in</p>
+                            ) : isAuthenticated && user ? (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#f8f8f5]">
+                                        <div className="w-10 h-10 bg-[#f9f506] rounded-full flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-[#181811]">person</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm text-[#181811] truncate">
+                                                {user.name || 'User'}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={logout}
+                                        className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        Sign Out
+                                    </button>
                                 </div>
-                            </Link>
+                            ) : (
+                                <Link href="/auth/login" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f8f8f5] transition-all">
+                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-gray-600">person</span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-sm text-[#181811]">Guest User</p>
+                                        <p className="text-xs text-gray-500">Sign in</p>
+                                    </div>
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
@@ -180,15 +214,50 @@ export default function Sidebar({ isOpen = false, onClose, isDesktopOpen = true,
 
                     {/* Profile Section */}
                     <div className="p-4">
-                        <Link href="/auth/login" onClick={onClose} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f8f8f5] transition-all">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <span className="material-symbols-outlined text-gray-600">person</span>
+                        {!_hasHydrated ? (
+                            // Loading state while hydrating
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#f8f8f5]">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-gray-600">person</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm text-gray-400">Loading...</p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm text-[#181811]">Guest User</p>
-                                <p className="text-xs text-gray-500">Sign in</p>
+                        ) : isAuthenticated && user ? (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#f8f8f5]">
+                                    <div className="w-10 h-10 bg-[#f9f506] rounded-full flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-[#181811]">person</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm text-[#181811] truncate">
+                                            {user.name || 'User'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        logout();
+                                        onClose?.();
+                                    }}
+                                    className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    Sign Out
+                                </button>
                             </div>
-                        </Link>
+                        ) : (
+                            <Link href="/auth/login" onClick={onClose} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#f8f8f5] transition-all">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-gray-600">person</span>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-semibold text-sm text-[#181811]">Guest User</p>
+                                    <p className="text-xs text-gray-500">Sign in</p>
+                                </div>
+                            </Link>
+                        )}
                     </div>
                 </div>
             </aside>

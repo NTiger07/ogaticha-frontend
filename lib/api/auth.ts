@@ -8,6 +8,63 @@ import {
   APIResponse,
 } from "../types/api";
 
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  message: string;
+  status: string;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    role: "student" | "teacher";
+    disability_type?: "visual" | "hearing" | "none";
+    preferred_mode?: "text" | "audio" | "visual";
+  };
+  token: string;
+}
+
+/**
+ * Login user
+ */
+export async function loginUser(
+  data: LoginRequest
+): Promise<APIResponse<LoginResponse>> {
+  try {
+    const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.LOGIN), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorData = responseData as APIError;
+      return {
+        success: false,
+        error: errorData.error || "Login failed",
+      };
+    }
+
+    return {
+      success: true,
+      data: responseData as LoginResponse,
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error occurred",
+    };
+  }
+}
+
 /**
  * Register a new user
  */

@@ -4,10 +4,33 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
 import { useVoiceMode } from '../../hooks/useVoiceMode';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function SettingsPage() {
+    const { user, isAuthenticated, updateUser } = useAuthStore();
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Profile form state
+    const [profileForm, setProfileForm] = useState({
+        name: '',
+        email: '',
+        disability_type: '',
+        preferred_mode: ''
+    });
+
+    // Load user data into form
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            setProfileForm({
+                name: user.name || '',
+                email: user.email || '',
+                disability_type: user.disability_type || '',
+                preferred_mode: user.preferred_mode || ''
+            });
+        }
+    }, [user, isAuthenticated]);
+
     const [settings, setSettings] = useState<{
         darkMode: boolean;
         notifications: boolean;
@@ -158,7 +181,7 @@ export default function SettingsPage() {
                                 <p className="hidden lg:block text-white/80 mt-1">Customize your OgaTicha experience</p>
                             </div>
                         </div>
-                        
+
                     </div>
                 </header>
 
@@ -175,8 +198,22 @@ export default function SettingsPage() {
                                     <span className="material-symbols-outlined text-4xl lg:text-5xl text-[#181811]">person</span>
                                 </div>
                                 <div className="flex-1 text-center sm:text-left">
-                                    <h3 className="font-bold text-xl lg:text-2xl text-[#181811]">Guest User</h3>
-                                    <p className="text-sm lg:text-base text-gray-600 mt-1">guest@ogaticha.com</p>
+                                    <h3 className="font-bold text-xl lg:text-2xl text-[#181811]">
+                                        {isAuthenticated && user ? user.name : 'Guest User'}
+                                    </h3>
+                                    <p className="text-sm lg:text-base text-gray-600 mt-1">
+                                        {isAuthenticated && user ? user.email : 'guest@ogaticha.com'}
+                                    </p>
+                                    {isAuthenticated && user && user.disability_type && (
+                                        <p className="text-xs lg:text-sm text-gray-500 mt-1">
+                                            Disability: {user.disability_type}
+                                        </p>
+                                    )}
+                                    {isAuthenticated && user && user.preferred_mode && (
+                                        <p className="text-xs lg:text-sm text-gray-500">
+                                            Preferred Mode: {user.preferred_mode}
+                                        </p>
+                                    )}
                                 </div>
                                 <button className="px-6 py-2.5 lg:px-8 lg:py-3 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-colors text-base lg:text-lg">
                                     Edit Profile
@@ -192,9 +229,9 @@ export default function SettingsPage() {
                             </h2>
                             <div className="space-y-3 lg:space-y-4">
                                 {[
-                                        { key: 'darkMode', icon: 'dark_mode', title: 'Dark Mode', desc: 'Enable dark theme' },
-                                        { key: 'highContrast', icon: 'contrast', title: 'High Contrast', desc: 'Increase color contrast' }
-                                    ].map((item) => (
+                                    { key: 'darkMode', icon: 'dark_mode', title: 'Dark Mode', desc: 'Enable dark theme' },
+                                    { key: 'highContrast', icon: 'contrast', title: 'High Contrast', desc: 'Increase color contrast' }
+                                ].map((item) => (
                                     <div key={item.key} className="bg-white rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200">
                                         <div className="flex items-center gap-3 lg:gap-4">
                                             <span className="material-symbols-outlined text-gray-600 text-2xl lg:text-3xl">{item.icon}</span>
@@ -224,7 +261,7 @@ export default function SettingsPage() {
                                                 key={size}
                                                 onClick={() => handleFontSizeChange(size)}
                                                 aria-label={`Select ${size} font size`}
-                                                className={`py-2.5 lg:py-3 rounded-lg font-semibold text-sm lg:text-base transition-all ${settings.fontSize === size ? 'bg-[#f9f506] text-[#181811]' : 'bg-gray-100 text-gray-600
+                                                className={`py-2.5 lg:py-3 rounded-lg font-semibold text-sm lg:text-base transition-all ${settings.fontSize === size ? 'bg-[#f9f506] text-[#181811]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                                             >
                                                 {size.charAt(0).toUpperCase() + size.slice(1)}
                                             </button>
@@ -306,8 +343,8 @@ export default function SettingsPage() {
                             </div>
                         </section>
                     </div>
-                </div>
-            </main>
-        </div>
+                </div >
+            </main >
+        </div >
     );
 }

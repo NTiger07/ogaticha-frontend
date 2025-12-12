@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { sendVoiceCommand, recordAudio, askAI, uploadNote } from '../../lib/api/classroom';
+import { useAuthStore } from '@/lib/store/authStore';
 
 interface Message {
     id: string;
@@ -13,6 +14,7 @@ interface Message {
 }
 
 export default function TutorPage() {
+    const { user, isAuthenticated } = useAuthStore();
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [message, setMessage] = useState('');
@@ -20,7 +22,7 @@ export default function TutorPage() {
         {
             id: '1',
             sender: 'tutor',
-            text: "Hello! 👋 I'm ready to help. You can type your question, upload notes, or use voice mode to ask me anything!",
+            text: `Hello${isAuthenticated && user ? `, ${user.name}` : ''}! 👋 I'm ready to help. You can type your question, upload notes, or use voice mode to ask me anything!`,
             timestamp: new Date()
         }
     ]);
