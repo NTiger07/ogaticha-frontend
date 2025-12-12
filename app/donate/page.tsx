@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import Sidebar from '../../components/Sidebar';
 
 export default function DonatePage() {
@@ -40,7 +41,28 @@ export default function DonatePage() {
 
                 <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-                        {goals.map((goal) => {
+                        {goals.map((goal, idx) => {
+                            // Special first card: Apply for Donation
+                            if (idx === 0) {
+                                return (
+                                    <article key="apply-for-donation" className="bg-white rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all">
+                                        <div className="relative h-48 lg:h-56 bg-gray-200 flex items-center justify-center">
+                                            <div className="text-center p-6">
+                                                <span className="material-symbols-outlined text-[#4a148c] text-6xl lg:text-7xl">campaign</span>
+                                                <h3 className="mt-4 text-2xl lg:text-3xl font-bold text-black">Apply for Donation</h3>
+                                                <p className="mt-2 text-gray-600">Have a student need? Submit a donation request and we will review it.</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-6 lg:p-8">
+                                            <Link href="/donate/apply" className="w-full inline-flex mt-2 bg-[#f9f506] hover:bg-[#e6e205] text-black text-lg lg:text-xl font-bold py-3 lg:py-4 rounded-full shadow-sm hover:shadow-md transition-all items-center justify-center gap-2">
+                                                <span>Apply for Donation</span>
+                                                <span className="material-symbols-outlined">arrow_forward</span>
+                                            </Link>
+                                        </div>
+                                    </article>
+                                );
+                            }
+
                             const percentage = calculatePercentage(goal.raised, goal.goal);
                             return (
                                 <article key={goal.id} className="bg-white rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all">
@@ -65,19 +87,17 @@ export default function DonatePage() {
 
                                         <div className="flex flex-col gap-2">
                                             <div className="flex justify-between items-end">
-                                                <span className="text-black font-bold text-lg lg:text-xl">
-                                                    ${goal.raised} <span className="text-gray-500 font-normal text-sm lg:text-base">raised of ${goal.goal}</span>
-                                                </span>
+                                                
                                                 <span className="text-[#4a148c] font-bold text-lg lg:text-xl">{percentage}%</span>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-3 lg:h-4">
-                                                <div className="bg-[#4a148c] h-3 lg:h-4 rounded-full transition-all" style={{ width: `${percentage}%` }}></div>
+                                            <div className="w-full">
+                                                <progress value={percentage} max={100} className="w-full h-3 lg:h-4 rounded-full overflow-hidden" />
                                             </div>
                                             <p className="text-gray-500 text-xs lg:text-sm">{goal.donors} donors recently</p>
                                         </div>
 
                                         <button className="w-full mt-2 bg-[#f9f506] hover:bg-[#e6e205] text-black text-lg lg:text-xl font-bold py-3 lg:py-4 rounded-full shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 group">
-                                            <span>{goal.donateAmount > 0 ? `Donate $${goal.donateAmount}` : 'Donate Amount'}</span>
+                                            <span>{ 'Donate Amount'}</span>
                                             <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">volunteer_activism</span>
                                         </button>
                                     </div>
