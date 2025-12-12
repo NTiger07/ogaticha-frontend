@@ -17,6 +17,11 @@ export const API_CONFIG = {
     REGISTER: "/api/auth/register",
     LOGIN: "/api/auth/login",
 
+    // User Profile
+    UPDATE_PROFILE: "/api/user/update-all",
+    UPDATE_SETTINGS: "/api/user/settings",
+    UPDATE_USER: (userId: string) => `/api/auth/user/edit/${userId}`,
+
     // Classroom/AI Tutor
     ASK_AI: "/api/classroom/ask-ai",
     UPLOAD_NOTE: "/api/classroom/upload-note",
@@ -52,8 +57,15 @@ export const API_CONFIG = {
 };
 
 // Get full API URL
-export function getApiUrl(endpoint: string): string {
-  return `${API_CONFIG.BASE_URL}${endpoint}`;
+export function getApiUrl(
+  endpoint: string | ((param: string) => string),
+  param?: string
+): string {
+  const path =
+    typeof endpoint === "function" && param
+      ? endpoint(param)
+      : (endpoint as string);
+  return `${API_CONFIG.BASE_URL}${path}`;
 }
 
 // Validate file size

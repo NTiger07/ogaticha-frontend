@@ -8,6 +8,16 @@ export interface User {
   role: "student" | "teacher";
   disability_type?: "visual" | "hearing" | "none";
   preferred_mode?: "text" | "audio" | "visual";
+  settings?: {
+    dark_mode?: boolean;
+    notifications?: boolean;
+    voice_mode?: boolean;
+    font_size?: string;
+    high_contrast?: boolean;
+    offline_mode?: boolean;
+    auto_download?: boolean;
+    selected_voice?: string;
+  };
 }
 
 interface AuthState {
@@ -25,6 +35,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setError: (error: string) => void;
   updateUser: (updates: Partial<User>) => void;
+  updateSettings: (settings: Partial<User["settings"]>) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 }
 
@@ -41,9 +52,9 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) =>
         set({
           user,
-        //   token,
+          //   token,
           isAuthenticated: true,
-        //   error: null,
+          //   error: null,
         }),
 
       logout: () =>
@@ -63,6 +74,16 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (updates) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...updates } : null,
+        })),
+
+      updateSettings: (settings) =>
+        set((state) => ({
+          user: state.user
+            ? {
+                ...state.user,
+                settings: { ...state.user.settings, ...settings },
+              }
+            : null,
         })),
 
       setHasHydrated: (hasHydrated) => set({ _hasHydrated: hasHydrated }),

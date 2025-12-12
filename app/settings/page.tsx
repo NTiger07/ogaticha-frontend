@@ -7,12 +7,16 @@ import Sidebar from '../../components/Sidebar';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { useVoiceMode } from '../../hooks/useVoiceMode';
 import { useAuthStore } from '@/lib/store/authStore';
+import { updateUserProfile, updateUserSettings } from '@/lib/api/auth';
 
 export default function SettingsPage() {
     const router = useRouter();
-    const { user, isAuthenticated, updateUser, logout } = useAuthStore();
+    const { user, isAuthenticated, updateUser, logout, token } = useAuthStore();
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     // Profile form state
     const [profileForm, setProfileForm] = useState({
@@ -22,7 +26,7 @@ export default function SettingsPage() {
         preferred_mode: ''
     });
 
-    // Load user data into form
+    // Load user data into form and settings
     useEffect(() => {
         if (isAuthenticated && user) {
             setProfileForm({
@@ -31,6 +35,23 @@ export default function SettingsPage() {
                 disability_type: user.disability_type || '',
                 preferred_mode: user.preferred_mode || ''
             });
+
+            // Load settings from user object
+            if (user.settings) {
+                setSettings({
+                    darkMode: user.settings.dark_mode ?? false,
+                    notifications: user.settings.notifications ?? true,
+                    voiceMode: user.settings.voice_mode ?? true,
+                    fontSize: user.settings.font_size ?? 'medium',
+                    highContrast: user.settings.high_contrast ?? false,
+                    offlineMode: user.settings.offline_mode ?? false,
+                    autoDownload: user.settings.auto_download ?? true,
+                });
+
+                if (user.settings.selected_voice) {
+                    setSelectedVoice(user.settings.selected_voice);
+                }
+            }
         }
     }, [user, isAuthenticated]);
 
@@ -155,21 +176,60 @@ export default function SettingsPage() {
     const handleVoiceChange = (voiceName: string) => {
         setSelectedVoice(voiceName);
         localStorage.setItem('selectedVoice', voiceName);
+
+        // Update Zustand store
+        updateUser({ settings: { ...user?.settings, selected_voice: voiceName } });
+
+        // Sync to backend
+        if (token && user?.id) {
+            updateUserSettings({ user_id: user.id, selected_voice: voiceName }, token).catch(err => {
+                console.error('Failed to sync voice setting to backend:', err);
+            });
+        }
+
         announce(`Voice changed to ${voiceName}`);
     };
 
     const toggleLecturer = (id: string) => {
-        setLecturers(prev => prev.map(l =>
-            l.id === id ? { ...l, enabled: !l.enabled } : l
-        ));
+        setLecturers(prev => {
+            const updated = prev.map(l =>
+                l.id === id ? { ...l, enabled: !l.enabled } : l
+            );
+
+            // Sync to backend
+            if (token) {
+                updateUserSettings({
+                    lecturers: updated.map(l => ({ id: l.id, enabled: l.enabled }))
+                }, token).catch(err => {
+                    console.error('Failed to sync lecturers to backend:', err);
+                });
+            }
+
+            return updated;
+        });
+
         const lecturer = lecturers.find(l => l.id === id);
         announce(`${lecturer?.name} ${lecturer?.enabled ? 'disabled' : 'enabled'}`);
     };
 
     const toggleCompanion = (id: string) => {
-        setCompanions(prev => prev.map(c =>
-            c.id === id ? { ...c, enabled: !c.enabled } : c
-        ));
+        setCompanions(prev => {
+            const updated = prev.map(c =>
+                c.id === id ? { ...c, enabled: !c.enabled } : c
+            );
+
+            // Sync to backend
+            if (token) {
+                updateUserSettings({
+                    companions: updated.map(c => ({ id: c.id, enabled: c.enabled }))
+                }, token).catch(err => {
+                    console.error('Failed to sync companions to backend:', err);
+                });
+            }
+
+            return updated;
+        });
+
         const companion = companions.find(c => c.id === id);
         announce(`${companion?.name} ${companion?.enabled ? 'disabled' : 'enabled'}`);
     };
@@ -189,6 +249,48 @@ export default function SettingsPage() {
         announce('Logged out successfully');
         router.push('/auth/login');
     };
+
+    const handleEditProfile = () => {
+        setEditName(user?.name || '');
+        setIsEditProfileOpen(true);
+    };
+
+    const handleSaveProfile = async () => {
+        if (!editName.trim() || editName === user?.name) {
+            console.log('Validation failed:', {
+                hasName: !!editName.trim(),
+                isSame: editName === user?.name,
+                hasToken: !!token
+            });
+            setIsEditProfileOpen(false);
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+
+            const response = await updateUserSettings({ user_id: user?.id, name: editName.trim() }, token);
+
+
+            if (response.success && response.data) {
+                console.log('Update successful, data:', response.data);
+                // Update the Zustand store with the new data
+                updateUser(response.data.user);
+                announce('Profile updated successfully');
+                setIsEditProfileOpen(false);
+            } else {
+                console.log('Update failed:', response.error);
+                announce('Failed to update profile. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            announce('An error occurred. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     // Apply settings to DOM when they change
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -220,11 +322,45 @@ export default function SettingsPage() {
         const newSettings = { ...settings, [setting]: newVal };
         setSettings(newSettings);
 
-        // Persist
+        // Persist to localStorage
         try {
             localStorage.setItem('settings', JSON.stringify(newSettings));
         } catch {
             // ignore
+        }
+
+        // Convert to snake_case for API
+        const apiSettings = {
+            dark_mode: newSettings.darkMode,
+            notifications: newSettings.notifications,
+            voice_mode: newSettings.voiceMode,
+            font_size: newSettings.fontSize,
+            high_contrast: newSettings.highContrast,
+            offline_mode: newSettings.offlineMode,
+            auto_download: newSettings.autoDownload,
+        };
+
+        // Update Zustand store
+        updateUser({ settings: apiSettings });
+
+        // Sync to backend
+        if (user?.id) {
+            const payload = { user_id: user.id, ...apiSettings };
+
+            updateUserSettings(payload, token)
+                .then(response => {
+                    console.log('Settings sync response:', response);
+                    if (response.success) {
+                        console.log('Settings synced successfully');
+                    } else {
+                        console.error('Settings sync failed:', response.error);
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to sync settings to backend:', err);
+                });
+        } else {
+            console.warn('Cannot sync settings: missing user.id');
         }
 
         // Also update theme in localStorage for backward compatibility
@@ -308,7 +444,10 @@ export default function SettingsPage() {
                                             </p>
                                         )}
                                     </div>
-                                    <button className="px-6 py-2.5 lg:px-8 lg:py-3 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-colors text-base lg:text-lg">
+                                    <button
+                                        onClick={handleEditProfile}
+                                        className="px-6 py-2.5 lg:px-8 lg:py-3 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-colors text-base lg:text-lg"
+                                    >
                                         Edit Profile
                                     </button>
                                 </div>
@@ -509,7 +648,7 @@ export default function SettingsPage() {
                                         Add New Companion
                                     </button>
                                 </div>
-                            </section> 
+                            </section>
 
                             {/* Account Actions */}
                             <section className="lg:col-span-2">
@@ -547,6 +686,57 @@ export default function SettingsPage() {
                         </div>
                     </div >
                 </main >
+
+                {/* Edit Profile Dialog */}
+                {isEditProfileOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 lg:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-2xl font-bold text-[#181811]">Edit Profile</h3>
+                                <button
+                                    onClick={() => setIsEditProfileOpen(false)}
+                                    className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-gray-600">close</span>
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-[#f9f506] focus:outline-none text-[#181811] bg-gray-50"
+                                        placeholder="Enter your name"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={() => setIsEditProfileOpen(false)}
+                                        className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-[#181811] font-bold rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveProfile}
+                                        disabled={!editName.trim() || isSaving}
+                                        className="flex-1 px-6 py-3 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isSaving && (
+                                            <span className="inline-block w-4 h-4 border-2 border-[#181811] border-t-transparent rounded-full animate-spin"></span>
+                                        )}
+                                        {isSaving ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div >
         </ProtectedRoute>
     );
