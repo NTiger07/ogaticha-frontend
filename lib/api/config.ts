@@ -27,6 +27,24 @@ export const API_CONFIG = {
     UPLOAD_NOTE: "/api/classroom/upload-note",
     VOICE_COMMAND: "/api/classroom/voice-command",
 
+    // Courses
+    COURSES: "/api/classroom/courses",
+    COURSE: (courseId: string) => `/api/classroom/courses/${courseId}`,
+    COURSE_MATERIALS: (courseId: string) =>
+      `/api/classroom/courses/${courseId}/materials`,
+    COURSE_MATERIAL_DOWNLOAD: (courseId: string, materialId: string) =>
+      `/api/classroom/courses/${courseId}/materials/${materialId}/download`,
+    COURSE_MATERIAL_DELETE: (courseId: string, materialId: string) =>
+      `/api/classroom/courses/${courseId}/materials/${materialId}`,
+    COURSE_STUDENTS: (courseId: string) =>
+      `/api/classroom/courses/${courseId}/students`,
+    COURSE_STUDENT_REMOVE: (courseId: string, studentId: string) =>
+      `/api/classroom/courses/${courseId}/students/${studentId}`,
+    LECTURER_COURSES: (lecturerId: string) =>
+      `/api/classroom/courses/lecturer/${lecturerId}`,
+    STUDENT_COURSES: (studentId: string) =>
+      `/api/classroom/courses/student/${studentId}`,
+
     // Chat Sessions
     CHAT_SESSIONS: "/api/chat",
     CHAT_SESSION: (sessionId: string) => `/api/chat/sessions/${sessionId}`,
@@ -62,13 +80,27 @@ export const API_CONFIG = {
 
 // Get full API URL
 export function getApiUrl(
-  endpoint: string | ((param: string) => string),
-  param?: string
+  endpoint:
+    | string
+    | ((param: string) => string)
+    | ((param1: string, param2: string) => string),
+  param1?: string,
+  param2?: string
 ): string {
-  const path =
-    typeof endpoint === "function" && param
-      ? endpoint(param)
-      : (endpoint as string);
+  let path: string;
+
+  if (typeof endpoint === "function") {
+    if (param1 && param2) {
+      path = (endpoint as (p1: string, p2: string) => string)(param1, param2);
+    } else if (param1) {
+      path = (endpoint as (p: string) => string)(param1);
+    } else {
+      path = endpoint as unknown as string;
+    }
+  } else {
+    path = endpoint;
+  }
+
   return `${API_CONFIG.BASE_URL}${path}`;
 }
 

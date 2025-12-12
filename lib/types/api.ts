@@ -2,7 +2,7 @@
 
 export type DisabilityType = "visual" | "hearing" | "none";
 export type PreferredMode = "text" | "audio" | "visual";
-export type UserRole = "student" | "teacher";
+export type UserRole = "student" | "lecturer";
 
 // ========== Authentication Types ==========
 
@@ -134,6 +134,85 @@ export interface UpdateSessionResponse {
 }
 
 export interface DeleteSessionResponse {
+  status: "success";
+  message: string;
+}
+
+// ========== Course/Lecture Types ==========
+
+export interface CourseMaterial {
+  id: string;
+  name: string;
+  file_url: string;
+  file_type: string;
+  uploaded_at: string;
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  lecturer_id: string;
+  lecturer_name?: string;
+  student_emails: string[];
+  materials: CourseMaterial[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCourseRequest {
+  title: string;
+  description: string;
+  lecturer_id: string;
+  student_emails?: string[];
+}
+
+export interface CreateCourseResponse {
+  status: "success";
+  course: Course;
+}
+
+export interface UpdateCourseRequest {
+  title?: string;
+  description?: string;
+  student_emails?: string[];
+}
+
+export interface UpdateCourseResponse {
+  status: "success";
+  course: Course;
+}
+
+export interface GetCoursesResponse {
+  status: "success";
+  courses: Course[];
+}
+
+export interface GetCourseResponse {
+  status: "success";
+  course: Course;
+}
+
+export interface AddStudentsToCourseRequest {
+  student_emails: string[];
+}
+
+export interface AddStudentsToCourseResponse {
+  status: "success";
+  course: Course;
+}
+
+export interface UploadMaterialRequest {
+  file: File;
+  course_id: string;
+}
+
+export interface UploadMaterialResponse {
+  status: "success";
+  material: CourseMaterial;
+}
+
+export interface DeleteCourseResponse {
   status: "success";
   message: string;
 }

@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name?: string;
   email: string;
-  role: "student" | "teacher";
+  role: "student" | "lecturer";
   disability_type?: "visual" | "hearing" | "none";
   preferred_mode?: "text" | "audio" | "visual";
   settings?: {
