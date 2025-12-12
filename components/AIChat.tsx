@@ -1,0 +1,326 @@
+// Example AI Chat Component - Can be integrated into classroom page
+// This demonstrates full API integration with text, voice, and image upload
+
+'use client';
+
+import { useState, useRef } from 'react';
+import { useAskAI, useUploadNote } from '@/hooks/useAPI';
+
+export default function AIChat() {
+    const [question, setQuestion] = useState('');
+    const [messages, setMessages] = useState<Array<{
+        type: 'user' | 'ai';
+        content: string;
+        timestamp: Date;
+    }>>([]);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isVoiceMode, setIsVoiceMode] = useState(true); // Voice mode is default
+
+    // API hooks
+    const { loading: textLoading, error: textError, ask } = useAskAI();
+    const { loading: uploadLoading, error: uploadError, upload } = useUploadNote();
+
+    const userId = ''; // Get from auth context/localStorage
+
+    // Handle text question
+    const handleAskQuestion = async () => {
+        if (!question.trim()) return;
+
+        // Add user message
+        setMessages(prev => [...prev, {
+            type: 'user',
+            content: question,
+            timestamp: new Date(),
+        }]);
+
+        const response = await ask(question, userId);
+
+        if (response) {
+            // Add AI response
+            setMessages(prev => [...prev, {
+                type: 'ai',
+                content: response.answer,
+                timestamp: new Date(),
+            }]);
+        }
+
+        setQuestion('');
+    };
+
+    // Handle image upload
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Add user message
+        setMessages(prev => [...prev, {
+            type: 'user',
+            content: `📷 Uploaded image: ${file.name}`,
+            timestamp: new Date(),
+        }]);
+
+        const response = await upload(file, userId);
+
+        if (response) {
+            // Add AI transcription
+            setMessages(prev => [...prev, {
+                type: 'ai',
+                content: response.transcription,
+                timestamp: new Date(),
+            }]);
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Handle voice recording using Web Speech API
+    const handleVoiceRecord = async () => {
+        // Check if speech recognition is supported
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+
+        setIsRecording(true);
+
+        try {
+            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+            const recognition = new SpeechRecognition();
+
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = async (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setIsRecording(false);
+
+                // Add user message with transcribed text
+                setMessages(prev => [...prev, {
+                    type: 'user',
+                    content: transcript,
+                    timestamp: new Date(),
+                }]);
+
+                // Send transcribed text to AI
+                const response = await ask(transcript, userId);
+
+                if (response) {
+                    // Add AI response
+                    setMessages(prev => [...prev, {
+                        type: 'ai',
+                        content: response.answer,
+                        timestamp: new Date(),
+                    }]);
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                setIsRecording(false);
+
+                let errorText = 'Failed to record speech.';
+                if (event.error === 'not-allowed') {
+                    errorText = 'Please allow microphone access.';
+                } else if (event.error === 'no-speech') {
+                    errorText = 'No speech detected.';
+                }
+                alert(errorText);
+            };
+
+            recognition.onend = () => {
+                setIsRecording(false);
+            };
+
+            recognition.start();
+        } catch (error) {
+            setIsRecording(false);
+            alert('Speech recognition is not available. Please try typing your message.');
+        }
+    };
+
+    const isLoading = textLoading || uploadLoading;
+    const error = textError || uploadError;
+
+    return (
+        <div className="flex flex-col h-full max-w-4xl mx-auto">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 && (
+                    <div className="text-center text-gray-500 mt-8">
+                        <div className="inline-block p-6 bg-[#f9f506]/10 rounded-full mb-6">
+                            <span className="material-symbols-outlined text-8xl text-[#f9f506]">mic</span>
+                        </div>
+                        <p className="text-2xl font-bold text-[#181811] mb-2">Voice Mode Active</p>
+                        <p className="text-lg text-gray-600">Tap the microphone below to speak</p>
+                        <p className="text-sm text-gray-500 mt-4">You can also type or upload images</p>
+                    </div>
+                )}
+
+                {messages.map((msg, idx) => (
+                    <div
+                        key={idx}
+                        className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                        <div
+                            className={`max-w-[80%] p-4 rounded-2xl ${msg.type === 'user'
+                                ? 'bg-[#f9f506] text-[#181811]'
+                                : 'bg-white text-[#181811] border-2 border-gray-200'
+                                }`}
+                        >
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-xs opacity-60 mt-2">
+                                {msg.timestamp.toLocaleTimeString()}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+
+                {isLoading && (
+                    <div className="flex justify-start">
+                        <div className="bg-white p-4 rounded-2xl border-2 border-gray-200">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined animate-spin">refresh</span>
+                                <span>Thinking...</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Error Display */}
+            {error && (
+                <div className="mx-4 p-3 bg-red-50 border-2 border-red-200 rounded-xl">
+                    <p className="text-red-600 text-sm">{error}</p>
+                </div>
+            )}
+
+            {/* Input Area */}
+            <div className="border-t-2 border-gray-200 p-4 bg-white">
+                {isVoiceMode ? (
+                    /* Voice Mode Interface */
+                    <div className="flex flex-col items-center gap-4">
+                        {/* Voice Status Indicator */}
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span>Voice Mode</span>
+                            <button
+                                onClick={() => setIsVoiceMode(false)}
+                                className="ml-2 text-xs text-blue-600 hover:underline"
+                            >
+                                Switch to typing
+                            </button>
+                        </div>
+
+                        {/* Large Tap to Speak Button */}
+                        <button
+                            onClick={handleVoiceRecord}
+                            disabled={isLoading || isRecording}
+                            className={`w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all shadow-xl disabled:opacity-50 ${isRecording
+                                ? 'bg-red-500 animate-pulse scale-110'
+                                : 'bg-[#f9f506] hover:bg-[#e6e205] hover:scale-105 active:scale-95'
+                                }`}
+                            title="Tap to speak"
+                        >
+                            <span className="material-symbols-outlined text-5xl">
+                                {isRecording ? 'stop' : 'mic'}
+                            </span>
+                            <span className="text-xs font-semibold mt-1">
+                                {isRecording ? 'Listening...' : 'Tap to Speak'}
+                            </span>
+                        </button>
+
+                        {/* Secondary Actions */}
+                        <div className="flex gap-3">
+                            {/* Image Upload Button */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isLoading}
+                                className="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center gap-2 transition-colors disabled:opacity-50 text-sm"
+                                title="Upload image"
+                            >
+                                <span className="material-symbols-outlined text-lg">image</span>
+                                <span>Upload</span>
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    /* Text Mode Interface */
+                    <div>
+                        {/* Mode Toggle */}
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                            <span className="text-xs text-gray-600">Typing Mode</span>
+                            <button
+                                onClick={() => setIsVoiceMode(true)}
+                                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                                <span className="material-symbols-outlined text-sm">mic</span>
+                                Switch to voice
+                            </button>
+                        </div>
+
+                        <div className="flex items-end gap-2">
+                            {/* Text Input */}
+                            <div className="flex-1">
+                                <textarea
+                                    value={question}
+                                    onChange={(e) => setQuestion(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleAskQuestion();
+                                        }
+                                    }}
+                                    placeholder="Type your question here..."
+                                    rows={2}
+                                    disabled={isLoading}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all resize-none"
+                                />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                                {/* Image Upload Button */}
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading}
+                                    className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors disabled:opacity-50"
+                                    title="Upload image"
+                                >
+                                    <span className="material-symbols-outlined">image</span>
+                                </button>
+
+                                {/* Send Button */}
+                                <button
+                                    onClick={handleAskQuestion}
+                                    disabled={isLoading || !question.trim()}
+                                    className="w-12 h-12 rounded-full bg-[#f9f506] hover:bg-[#e6e205] flex items-center justify-center transition-colors disabled:opacity-50"
+                                    title="Send message"
+                                >
+                                    <span className="material-symbols-outlined">send</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Help Text */}
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                            Press Enter to send • Shift+Enter for new line
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

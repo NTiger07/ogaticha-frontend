@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { registerUser } from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/store/authStore';
+import { DisabilityType, PreferredMode } from '@/lib/types/api';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -11,7 +14,12 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
         role: 'student', // default role
+        disabilityType: 'none' as DisabilityType,
+        preferredMode: 'text' as PreferredMode,
     });
+
+    const { setLoading, setError, isLoading, error, clearError } = useAuthStore();
+    const router = useRouter();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
@@ -20,26 +28,41 @@ export default function RegisterPage() {
         });
     };
 
-    const router = useRouter();
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: replace with real registration API integration
-        console.log('Register:', formData);
+        clearError();
 
-        // Redirect based on selected role
-        if (formData.role === 'lecturer') {
-            router.push('/lecturer');
-        } else if (formData.role === 'companion') {
-            router.push('/companion');
-        } else {
-            router.push('/'); // default student dashboard
+        // Validate passwords match
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match!');
+            return;
         }
+
+        setLoading(true);
+
+        // Call API
+        const result = await registerUser({
+            name: formData.fullName,
+            email: formData.email,
+            password: formData.password,
+            role: formData.role === 'student' ? 'student' : 'teacher',
+            disability_type: formData.disabilityType,
+            preferred_mode: formData.preferredMode,
+        });
+
+        if (result.success) {
+            // Redirect to login after successful registration
+            router.push('/auth/login?registered=true');
+        } else {
+            setError(result.error);
+        }
+
+        setLoading(false);
     };
 
     return (
-        <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f] flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white dark:bg-[#1a1a0b] rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-[#33331a]">
+        <div className="min-h-screen bg-[#f8f8f5] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
                     <div className="w-16 h-16 bg-[#f9f506] rounded-full flex items-center justify-center">
@@ -48,12 +71,19 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Title */}
-                <h1 className="text-3xl font-bold text-center text-[#181811] dark:text-white mb-2">
+                <h1 className="text-3xl font-bold text-center text-[#181811] mb-2">
                     Create Account
                 </h1>
-                <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
+                <p className="text-center text-gray-600 mb-8">
                     Join OgaTicha and start learning
                 </p>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                        <p className="text-sm text-red-600 text-center font-medium">{error}</p>
+                    </div>
+                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -61,7 +91,7 @@ export default function RegisterPage() {
                     <div>
                         <label
                             htmlFor="fullName"
-                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                            className="block text-sm font-bold text-[#181811] mb-2"
                         >
                             Full Name
                         </label>
@@ -71,7 +101,7 @@ export default function RegisterPage() {
                             name="fullName"
                             value={formData.fullName}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
                             placeholder="John Doe"
                             required
                         />
@@ -81,7 +111,7 @@ export default function RegisterPage() {
                     <div>
                         <label
                             htmlFor="email"
-                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                            className="block text-sm font-bold text-[#181811] mb-2"
                         >
                             Email Address
                         </label>
@@ -91,7 +121,7 @@ export default function RegisterPage() {
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
                             placeholder="your.email@example.com"
                             required
                         />
@@ -101,7 +131,7 @@ export default function RegisterPage() {
                     <div>
                         <label
                             htmlFor="role"
-                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                            className="block text-sm font-bold text-[#181811] mb-2"
                         >
                             Account Type
                         </label>
@@ -110,12 +140,54 @@ export default function RegisterPage() {
                             name="role"
                             value={formData.role}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
                         >
                             <option value="student">Student (default)</option>
                             <option value="lecturer">Lecturer</option>
                             <option value="companion">Companion</option>
-                           
+
+                        </select>
+                    </div>
+
+                    {/* Disability Type */}
+                    <div>
+                        <label
+                            htmlFor="disabilityType"
+                            className="block text-sm font-bold text-[#181811] mb-2"
+                        >
+                            Accessibility Profile (Optional)
+                        </label>
+                        <select
+                            id="disabilityType"
+                            name="disabilityType"
+                            value={formData.disabilityType}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                        >
+                            <option value="none">None</option>
+                            <option value="visual">Visual Impairment</option>
+                            <option value="hearing">Hearing Impairment</option>
+                        </select>
+                    </div>
+
+                    {/* Preferred Mode */}
+                    <div>
+                        <label
+                            htmlFor="preferredMode"
+                            className="block text-sm font-bold text-[#181811] mb-2"
+                        >
+                            Preferred Mode
+                        </label>
+                        <select
+                            id="preferredMode"
+                            name="preferredMode"
+                            value={formData.preferredMode}
+                            onChange={handleChange}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                        >
+                            <option value="text">Text</option>
+                            <option value="audio">Audio</option>
+                            <option value="visual">Visual</option>
                         </select>
                     </div>
 
@@ -123,7 +195,7 @@ export default function RegisterPage() {
                     <div>
                         <label
                             htmlFor="password"
-                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                            className="block text-sm font-bold text-[#181811] mb-2"
                         >
                             Password
                         </label>
@@ -133,7 +205,7 @@ export default function RegisterPage() {
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
                             placeholder="••••••••"
                             required
                         />
@@ -143,7 +215,7 @@ export default function RegisterPage() {
                     <div>
                         <label
                             htmlFor="confirmPassword"
-                            className="block text-sm font-bold text-[#181811] dark:text-white mb-2"
+                            className="block text-sm font-bold text-[#181811] mb-2"
                         >
                             Confirm Password
                         </label>
@@ -153,39 +225,58 @@ export default function RegisterPage() {
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-[#33331a] bg-[#f8f8f5] dark:bg-[#2c2c15] text-[#181811] dark:text-white focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-[#f8f8f5] text-[#181811] focus:border-[#f9f506] focus:ring-2 focus:ring-[#f9f506]/20 outline-none transition-all"
                             placeholder="••••••••"
                             required
                         />
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                            <p className="text-red-600 text-sm font-medium">
+                                {error}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full py-4 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-6"
+                        disabled={isLoading}
+                        className="w-full py-4 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span>Create Account</span>
-                        <span className="material-symbols-outlined">arrow_forward</span>
+                        {isLoading ? (
+                            <>
+                                <span className="material-symbols-outlined animate-spin">refresh</span>
+                                <span>Creating Account...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Create Account</span>
+                                <span className="material-symbols-outlined">arrow_forward</span>
+                            </>
+                        )}
                     </button>
                 </form>
 
                 {/* Divider */}
                 <div className="flex items-center gap-4 my-6">
-                    <div className="flex-1 h-px bg-gray-300 dark:bg-[#33331a]"></div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">or</span>
-                    <div className="flex-1 h-px bg-gray-300 dark:bg-[#33331a]"></div>
+                    <div className="flex-1 h-px bg-gray-300"></div>
+                    <span className="text-sm text-gray-500">or</span>
+                    <div className="flex-1 h-px bg-gray-300"></div>
                 </div>
 
                 {/* Social Login */}
                 <div className="space-y-3">
-                    <button className="w-full py-3 px-4 bg-white dark:bg-[#2c2c15] hover:bg-gray-50 dark:hover:bg-[#3a3a1a] border-2 border-gray-300 dark:border-[#33331a] rounded-full font-semibold text-[#181811] dark:text-white transition-all flex items-center justify-center gap-3">
+                    <button className="w-full py-3 px-4 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-full font-semibold text-[#181811] transition-all flex items-center justify-center gap-3">
                         <span className="material-symbols-outlined">account_circle</span>
                         Sign up with Google
                     </button>
                 </div>
 
                 {/* Sign In Link */}
-                <p className="mt-8 text-center text-gray-600 dark:text-gray-400">
+                <p className="mt-8 text-center text-gray-600">
                     Already have an account?{' '}
                     <Link
                         href="/auth/login"
@@ -198,7 +289,7 @@ export default function RegisterPage() {
                 {/* Back to Home */}
                 <Link
                     href="/"
-                    className="mt-4 flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-[#181811] dark:hover:text-white transition-colors"
+                    className="mt-4 flex items-center justify-center gap-2 text-gray-600 hover:text-[#181811] transition-colors"
                 >
                     <span className="material-symbols-outlined text-xl">arrow_back</span>
                     <span className="text-sm font-medium">Back to Home</span>
