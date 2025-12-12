@@ -88,16 +88,20 @@ export default function CourseDetailPage() {
 
     // Helper function to get material file name
     const getMaterialFileName = (material: any): string => {
-        // Try to get the name field first
-        if (material.name && material.name.trim()) {
-            return material.name;
+        // Try title field first (backend sends this)
+        if (material.title && material.title.trim()) {
+            return material.title;
         }
 
-        // Fallback: try to extract filename from file_url
-        if (material.file_url) {
-            const urlParts = material.file_url.split('/');
-            const filename = urlParts[urlParts.length - 1];
-            // Decode URL encoding if present
+        // Fallback to filename field
+        if (material.filename && material.filename.trim()) {
+            return material.filename;
+        }
+
+        // Try to extract from file_path
+        if (material.file_path) {
+            const pathParts = material.file_path.split('/');
+            const filename = pathParts[pathParts.length - 1];
             return decodeURIComponent(filename);
         }
 
@@ -130,21 +134,38 @@ export default function CourseDetailPage() {
     const handleDownloadMaterial = async (materialId: string, materialName: string) => {
         if (!courseId) return;
 
-        const result = await downloadCourseMaterial(courseId, materialId, token || undefined);
+        try {
+            const result = await downloadCourseMaterial(courseId, materialId, token || undefined);
 
-        if (result.success) {
-            // Create a blob URL and download
-            const blob = result.data;
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = materialName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        } else {
-            alert('Failed to download material: ' + result.error);
+            if (result.success) {
+                // Create a blob URL and download
+                const blob = result.data;
+
+                // Check if blob has content
+                if (blob.size === 0) {
+                    alert('Downloaded file is empty');
+                    return;
+                }
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = materialName || 'download';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+
+                // Cleanup after a short delay
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            } else {
+                alert('Failed to download material: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            alert('An error occurred while downloading: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
 

@@ -436,36 +436,56 @@ export async function downloadCourseMaterial(
   materialId: string,
   token?: string
 ): Promise<APIResponse<Blob>> {
+  console.log("=== downloadCourseMaterial API Start ===");
+  console.log("Parameters:", { courseId, materialId, hasToken: !!token });
+
   try {
-    const response = await fetch(
-      getApiUrl(
-        API_CONFIG.ENDPOINTS.COURSE_MATERIAL_DOWNLOAD,
-        courseId,
-        materialId
-      ),
-      {
-        method: "GET",
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      }
-    );
+    // Construct URL directly
+    const endpoint = `/api/classroom/courses/${courseId}/materials/${materialId}/download`;
+    const url = getApiUrl(endpoint);
+    console.log("Request URL:", url);
+    console.log("Request headers:", {
+      Authorization: token ? `Bearer ${token.substring(0, 10)}...` : "None",
+    });
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    console.log("Response status:", response.status);
+    console.log("Response headers:", {
+      contentType: response.headers.get("content-type"),
+      contentLength: response.headers.get("content-length"),
+      contentDisposition: response.headers.get("content-disposition"),
+    });
 
     if (!response.ok) {
+      console.error("Response not OK, status:", response.status);
       const errorData = (await response.json()) as APIError;
+      console.error("Error data:", errorData);
       return {
         success: false,
         error: errorData.error || "Failed to download material",
       };
     }
 
+    console.log("Converting response to blob...");
     const blob = await response.blob();
+    console.log("Blob created:", {
+      size: blob.size,
+      type: blob.type,
+    });
 
+    console.log("=== downloadCourseMaterial API Success ===");
     return {
       success: true,
       data: blob,
     };
   } catch (error) {
+    console.error("=== downloadCourseMaterial API Error ===");
     console.error("Download material error:", error);
     return {
       success: false,
