@@ -140,7 +140,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f8f8f5] dark:bg-[#23220f]">
+        <div className="min-h-screen bg-[#f8f8f5]">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDesktopOpen={isDesktopSidebarOpen} onToggleDesktop={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)} />
 
             <main className={`${isDesktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen pb-8 transition-all duration-300`}>
@@ -166,17 +166,17 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                         {/* Profile Section */}
                         <section className="lg:col-span-2">
-                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] mb-4 lg:mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[#f9f506] text-2xl lg:text-3xl">person</span>
                                 Profile
                             </h2>
-                            <div className="bg-white dark:bg-[#1a1a0b] rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row items-center gap-4 lg:gap-6 border border-gray-200 dark:border-[#33331a]">
+                            <div className="bg-white rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row items-center gap-4 lg:gap-6 border border-gray-200">
                                 <div className="w-20 h-20 lg:w-24 lg:h-24 bg-[#f9f506] rounded-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-4xl lg:text-5xl text-[#181811]">person</span>
                                 </div>
                                 <div className="flex-1 text-center sm:text-left">
-                                    <h3 className="font-bold text-xl lg:text-2xl text-[#181811] dark:text-white">Guest User</h3>
-                                    <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 mt-1">guest@ogaticha.com</p>
+                                    <h3 className="font-bold text-xl lg:text-2xl text-[#181811]">Guest User</h3>
+                                    <p className="text-sm lg:text-base text-gray-600 mt-1">guest@ogaticha.com</p>
                                 </div>
                                 <button className="px-6 py-2.5 lg:px-8 lg:py-3 bg-[#f9f506] hover:bg-[#e6e205] text-[#181811] font-bold rounded-full transition-colors text-base lg:text-lg">
                                     Edit Profile
@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
                         {/* Appearance Section */}
                         <section>
-                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] mb-4 lg:mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[#f9f506] text-2xl lg:text-3xl">palette</span>
                                 Appearance
                             </h2>
@@ -195,12 +195,12 @@ export default function SettingsPage() {
                                         { key: 'darkMode', icon: 'dark_mode', title: 'Dark Mode', desc: 'Enable dark theme' },
                                         { key: 'highContrast', icon: 'contrast', title: 'High Contrast', desc: 'Increase color contrast' }
                                     ].map((item) => (
-                                    <div key={item.key} className="bg-white dark:bg-[#1a1a0b] rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200 dark:border-[#33331a]">
+                                    <div key={item.key} className="bg-white rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200">
                                         <div className="flex items-center gap-3 lg:gap-4">
-                                            <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-2xl lg:text-3xl">{item.icon}</span>
+                                            <span className="material-symbols-outlined text-gray-600 text-2xl lg:text-3xl">{item.icon}</span>
                                             <div>
-                                                <h3 className="font-bold text-base lg:text-lg text-[#181811] dark:text-white">{item.title}</h3>
-                                                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">{item.desc}</p>
+                                                <h3 className="font-bold text-base lg:text-lg text-[#181811]">{item.title}</h3>
+                                                <p className="text-sm lg:text-base text-gray-600">{item.desc}</p>
                                             </div>
                                         </div>
                                         <button
@@ -213,10 +213,10 @@ export default function SettingsPage() {
                                     </div>
                                 ))}
 
-                                <div className="bg-white dark:bg-[#1a1a0b] rounded-xl p-4 lg:p-6 border border-gray-200 dark:border-[#33331a]">
+                                <div className="bg-white rounded-xl p-4 lg:p-6 border border-gray-200">
                                     <div className="flex items-center gap-3 lg:gap-4 mb-4">
-                                        <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-2xl lg:text-3xl">text_fields</span>
-                                        <h3 className="font-bold text-base lg:text-lg text-[#181811] dark:text-white">Font Size</h3>
+                                        <span className="material-symbols-outlined text-gray-600 text-2xl lg:text-3xl">text_fields</span>
+                                        <h3 className="font-bold text-base lg:text-lg text-[#181811]">Font Size</h3>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 lg:gap-3">
                                         {['small', 'medium', 'large'].map((size) => (
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                                                 key={size}
                                                 onClick={() => handleFontSizeChange(size)}
                                                 aria-label={`Select ${size} font size`}
-                                                className={`py-2.5 lg:py-3 rounded-lg font-semibold text-sm lg:text-base transition-all ${settings.fontSize === size ? 'bg-[#f9f506] text-[#181811]' : 'bg-gray-100 dark:bg-[#2c2c15] text-gray-600 dark:text-gray-400'}`}
+                                                className={`py-2.5 lg:py-3 rounded-lg font-semibold text-sm lg:text-base transition-all ${settings.fontSize === size ? 'bg-[#f9f506] text-[#181811]' : 'bg-gray-100 text-gray-600
                                             >
                                                 {size.charAt(0).toUpperCase() + size.slice(1)}
                                             </button>
@@ -236,7 +236,7 @@ export default function SettingsPage() {
 
                         {/* Accessibility Section */}
                         <section>
-                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] mb-4 lg:mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[#f9f506] text-2xl lg:text-3xl">accessibility</span>
                                 Accessibility
                             </h2>
@@ -245,12 +245,12 @@ export default function SettingsPage() {
                                     { key: 'voiceMode', icon: 'mic', title: 'Voice Mode', desc: 'Enable voice interactions' },
                                     { key: 'notifications', icon: 'notifications', title: 'Notifications', desc: 'Enable push notifications' }
                                 ].map((item) => (
-                                    <div key={item.key} className="bg-white dark:bg-[#1a1a0b] rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200 dark:border-[#33331a]">
+                                    <div key={item.key} className="bg-white rounded-xl p-4 lg:p-6 flex items-center justify-between border border-gray-200">
                                         <div className="flex items-center gap-3 lg:gap-4">
-                                            <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-2xl lg:text-3xl">{item.icon}</span>
+                                            <span className="material-symbols-outlined text-gray-600 text-2xl lg:text-3xl">{item.icon}</span>
                                             <div>
-                                                <h3 className="font-bold text-base lg:text-lg text-[#181811] dark:text-white">{item.title}</h3>
-                                                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">{item.desc}</p>
+                                                <h3 className="font-bold text-base lg:text-lg text-[#181811]">{item.title}</h3>
+                                                <p className="text-sm lg:text-base text-gray-600">{item.desc}</p>
                                             </div>
                                         </div>
                                         <button
@@ -267,22 +267,22 @@ export default function SettingsPage() {
 
                         {/* Account Actions */}
                         <section className="lg:col-span-2">
-                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+                            <h2 className="text-xl lg:text-2xl font-bold text-[#181811] mb-4 lg:mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[#f9f506] text-2xl lg:text-3xl">manage_accounts</span>
                                 Account
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                                <Link href="/auth/login" className="bg-white dark:bg-[#1a1a0b] hover:bg-[#f9f506]/10 dark:hover:bg-[#f9f506]/10 rounded-xl p-6 transition-all border border-gray-200 dark:border-[#33331a]">
+                                <Link href="/auth/login" className="bg-white hover:bg-[#f9f506]/10 rounded-xl p-6 transition-all border border-gray-200">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3 lg:gap-4">
-                                            <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-2xl lg:text-3xl">login</span>
-                                            <h3 className="font-bold text-base lg:text-lg text-[#181811] dark:text-white">Sign In</h3>
+                                            <span className="material-symbols-outlined text-gray-600 text-2xl lg:text-3xl">login</span>
+                                            <h3 className="font-bold text-base lg:text-lg text-[#181811]">Sign In</h3>
                                         </div>
                                         <span className="material-symbols-outlined text-gray-400">arrow_forward</span>
                                     </div>
                                 </Link>
 
-                                <button className="bg-white dark:bg-[#1a1a0b] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl p-6 transition-all text-left border border-gray-200 dark:border-[#33331a]">
+                                <button className="bg-white hover:bg-red-50 rounded-xl p-6 transition-all text-left border border-gray-200">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3 lg:gap-4">
                                             <span className="material-symbols-outlined text-red-500 text-2xl lg:text-3xl">logout</span>
@@ -294,8 +294,8 @@ export default function SettingsPage() {
                         </section>
 
                         {/* App Info */}
-                        <section className="lg:col-span-2 pt-4 border-t border-gray-200 dark:border-[#33331a]">
-                            <div className="text-center text-sm lg:text-base text-gray-600 dark:text-gray-400 space-y-2">
+                        <section className="lg:col-span-2 pt-4 border-t border-gray-200">
+                            <div className="text-center text-sm lg:text-base text-gray-600 space-y-2">
                                 <p className="font-semibold">OgaTicha v1.0.0</p>
                                 <p>© 2025 OgaTicha. All rights reserved.</p>
                                 <div className="flex justify-center gap-4 lg:gap-6 mt-3">
