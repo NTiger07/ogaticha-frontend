@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { extractTextFromFile } from "@/lib/utils/textExtractor";
+import { processMaterialText } from "@/lib/api/courses";
 
 // Mock data store
 let courses = [
@@ -26,10 +28,10 @@ let courses = [
 // POST /api/courses/[courseId]/materials - Upload course material
 export async function POST(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
+    const { courseId } = await params;
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -43,18 +45,66 @@ export async function POST(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    // In production, you would upload the file to cloud storage (S3, Azure Blob, etc.)
-    // For now, we'll create a mock material entry
+    // Extract text from the file
+    console.log(`Starting text extraction for: ${file.name}`);
+    const extractionResult = await extractTextFromFile(file);
+
+    // Create material entry with extraction data
     const newMaterial = {
       id: `material_${Date.now()}`,
       name: file.name,
       file_url: `/materials/${file.name}`, // Mock URL
       file_type: file.type,
       uploaded_at: new Date().toISOString(),
+      extracted_text: extractionResult.success
+        ? extractionResult.text
+        : undefined,
+      extraction_status: extractionResult.success
+        ? ("completed" as const)
+        : ("failed" as const),
+      extraction_error: extractionResult.error,
+      word_count: extractionResult.wordCount,
+      pages: extractionResult.pages,
     };
 
     courses[courseIndex].materials.push(newMaterial);
     courses[courseIndex].updated_at = new Date().toISOString();
+
+    console.log(
+      `Text extraction ${
+        extractionResult.success ? "successful" : "failed"
+      } for: ${file.name}`
+    );
+    if (extractionResult.success) {
+      console.log(
+        `Extracted ${extractionResult.wordCount} words from ${file.name}`
+      );
+    }
+
+    // If extraction was successful, send the extracted text to the backend
+    if (extractionResult.success && extractionResult.text) {
+      console.log("Sending extracted text to backend...");
+
+      const backendResult = await processMaterialText({
+        material_id: newMaterial.id,
+        course_id: courseId,
+        extracted_text: extractionResult.text,
+        file_name: file.name,
+        file_type: file.type,
+        word_count: extractionResult.wordCount,
+        pages: extractionResult.pages,
+      });
+
+      if (backendResult.success) {
+        console.log("Successfully sent extracted text to backend");
+      } else {
+        console.error(
+          "Failed to send extracted text to backend:",
+          backendResult.error
+        );
+        // Note: We still return success for the upload, but log the backend sync error
+      }
+    }
 
     return NextResponse.json({
       status: "success",

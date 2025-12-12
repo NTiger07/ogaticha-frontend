@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 
 const STORAGE_KEY = "theme";
 
-export default function ThemeToggle(): JSX.Element {
+export default function ThemeToggle(): React.ReactElement {
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
 
   useEffect(() => {

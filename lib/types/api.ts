@@ -146,6 +146,11 @@ export interface CourseMaterial {
   file_url: string;
   file_type: string;
   uploaded_at: string;
+  extracted_text?: string;
+  extraction_status?: "pending" | "processing" | "completed" | "failed";
+  extraction_error?: string;
+  word_count?: number;
+  pages?: number;
 }
 
 export interface Course {
@@ -210,6 +215,22 @@ export interface UploadMaterialRequest {
 export interface UploadMaterialResponse {
   status: "success";
   material: CourseMaterial;
+}
+
+export interface ProcessMaterialTextRequest {
+  material_id: string;
+  course_id: string;
+  extracted_text: string;
+  file_name: string;
+  file_type: string;
+  word_count?: number;
+  pages?: number;
+}
+
+export interface ProcessMaterialTextResponse {
+  status: "success";
+  message: string;
+  material_id: string;
 }
 
 export interface DeleteCourseResponse {

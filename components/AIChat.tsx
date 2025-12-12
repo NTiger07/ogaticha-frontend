@@ -36,7 +36,7 @@ export default function AIChat() {
     // Format markdown-style text to JSX
     const formatMessage = (text: string) => {
         const lines = text.split('\n');
-        const elements: JSX.Element[] = [];
+        const elements: React.ReactElement[] = [];
         let currentListItems: string[] = [];
         let key = 0;
 

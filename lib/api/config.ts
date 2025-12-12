@@ -36,6 +36,7 @@ export const API_CONFIG = {
       `/api/classroom/courses/${courseId}/materials/${materialId}/download`,
     COURSE_MATERIAL_DELETE: (courseId: string, materialId: string) =>
       `/api/classroom/courses/${courseId}/materials/${materialId}`,
+    COURSE_MATERIAL_PROCESS: "/api/classroom/materials/process-text",
     COURSE_STUDENTS: (courseId: string) =>
       `/api/classroom/courses/${courseId}/students`,
     COURSE_STUDENT_REMOVE: (courseId: string, studentId: string) =>

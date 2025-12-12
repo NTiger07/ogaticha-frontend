@@ -26,10 +26,10 @@ let courses = [
 // GET /api/courses/user/[userId] - Get courses for a specific user
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = params.userId;
+    const { userId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const userRole = searchParams.get("role");
     const userEmail = searchParams.get("email");
