@@ -11,6 +11,8 @@ import {
   AddStudentsToCourseRequest,
   AddStudentsToCourseResponse,
   UploadMaterialResponse,
+  ProcessMaterialTextRequest,
+  ProcessMaterialTextResponse,
   DeleteCourseResponse,
   APIError,
   APIResponse,
@@ -487,6 +489,61 @@ export async function downloadCourseMaterial(
   } catch (error) {
     console.error("=== downloadCourseMaterial API Error ===");
     console.error("Download material error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error occurred",
+    };
+  }
+}
+
+/**
+ * Send extracted material text to the backend for processing
+ */
+export async function processMaterialText(
+  materialData: ProcessMaterialTextRequest,
+  token?: string
+): Promise<APIResponse<ProcessMaterialTextResponse>> {
+  try {
+    console.log("=== processMaterialText API Call ===");
+    console.log("Material data:", {
+      material_id: materialData.material_id,
+      course_id: materialData.course_id,
+      file_name: materialData.file_name,
+      text_length: materialData.extracted_text.length,
+      word_count: materialData.word_count,
+    });
+
+    const response = await fetch(
+      getApiUrl(API_CONFIG.ENDPOINTS.COURSE_MATERIAL_PROCESS),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(materialData),
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      console.error("Process material text failed:", responseData);
+      const errorData = responseData as APIError;
+      return {
+        success: false,
+        error: errorData.error || "Failed to process material text",
+      };
+    }
+
+    console.log("=== processMaterialText API Success ===");
+    return {
+      success: true,
+      data: responseData as ProcessMaterialTextResponse,
+    };
+  } catch (error) {
+    console.error("=== processMaterialText API Error ===");
+    console.error("Process material text error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Network error occurred",

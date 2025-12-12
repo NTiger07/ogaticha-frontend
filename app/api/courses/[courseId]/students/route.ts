@@ -26,10 +26,10 @@ let courses = [
 // POST /api/courses/[courseId]/students - Add students to a course
 export async function POST(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
+    const { courseId } = await params;
     const body = await request.json();
     const { student_emails } = body;
 

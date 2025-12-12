@@ -269,6 +269,11 @@ export default function SettingsPage() {
         setIsSaving(true);
 
         try {
+            if (!token) {
+                announce('Authentication required');
+                setIsSaving(false);
+                return;
+            }
 
             const response = await updateUserSettings({ user_id: user?.id, name: editName.trim() }, token);
 
@@ -280,7 +285,7 @@ export default function SettingsPage() {
                 announce('Profile updated successfully');
                 setIsEditProfileOpen(false);
             } else {
-                console.log('Update failed:', response.error);
+                console.log('Update failed:', 'error' in response ? response.error : 'Unknown error');
                 announce('Failed to update profile. Please try again.');
             }
         } catch (error) {
@@ -344,7 +349,7 @@ export default function SettingsPage() {
         updateUser({ settings: apiSettings });
 
         // Sync to backend
-        if (user?.id) {
+        if (user?.id && token) {
             const payload = { user_id: user.id, ...apiSettings };
 
             updateUserSettings(payload, token)
@@ -353,14 +358,14 @@ export default function SettingsPage() {
                     if (response.success) {
                         console.log('Settings synced successfully');
                     } else {
-                        console.error('Settings sync failed:', response.error);
+                        console.error('Settings sync failed:', 'error' in response ? response.error : 'Unknown error');
                     }
                 })
                 .catch(err => {
                     console.error('Failed to sync settings to backend:', err);
                 });
         } else {
-            console.warn('Cannot sync settings: missing user.id');
+            console.warn('Cannot sync settings: missing user.id or token');
         }
 
         // Also update theme in localStorage for backward compatibility

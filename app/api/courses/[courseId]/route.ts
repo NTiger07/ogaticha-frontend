@@ -26,10 +26,10 @@ let courses = [
 // GET /api/courses/[courseId] - Get a specific course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
+    const { courseId } = await params;
     const course = courses.find((c) => c.id === courseId);
 
     if (!course) {
@@ -52,10 +52,10 @@ export async function GET(
 // PUT /api/courses/[courseId] - Update a course
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
+    const { courseId } = await params;
     const body = await request.json();
     const { title, description, student_emails } = body;
 
@@ -92,10 +92,10 @@ export async function PUT(
 // DELETE /api/courses/[courseId] - Delete a course
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const courseId = params.courseId;
+    const { courseId } = await params;
     const courseIndex = courses.findIndex((c) => c.id === courseId);
 
     if (courseIndex === -1) {
