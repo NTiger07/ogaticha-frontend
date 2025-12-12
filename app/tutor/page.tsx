@@ -5,6 +5,8 @@ import Sidebar from '../../components/Sidebar';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { askAI, uploadNote } from '../../lib/api/classroom';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useChatStore } from '@/lib/store/chatStore';
+import type { ChatMessage } from '@/lib/types/api';
 
 interface Message {
     id: string;
@@ -16,8 +18,21 @@ interface Message {
 
 export default function TutorPage() {
     const { user, isAuthenticated } = useAuthStore();
+    const {
+        sessions,
+        currentSession,
+        messages: storedMessages,
+        loadSessions,
+        loadSession,
+        createNewSession,
+        deleteSession,
+        updateSessionTitle,
+        addMessage: addStoredMessage,
+    } = useChatStore();
+
     const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
     const [message, setMessage] = useState('');
 
     // Format markdown-style text to JSX
@@ -140,17 +155,61 @@ export default function TutorPage() {
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
-    const [isVoiceMode, setIsVoiceMode] = useState(false);
+    const [isVoiceMode, setIsVoiceMode] = useState(true);
+    const recognitionRef = useRef<any>(null);
+    const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const [isContinuousMode, setIsContinuousMode] = useState(false);
     const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const shouldContinueListeningRef = useRef(false);
     const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+    // Convert stored chat messages to local message format
+    useEffect(() => {
+        if (storedMessages && storedMessages.length > 0) {
+            const convertedMessages: Message[] = storedMessages.map(msg => ({
+                id: msg.id,
+                sender: msg.type === 'user' ? 'user' : 'tutor',
+                text: msg.content,
+                timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(convertedMessages);
+        }
+    }, [storedMessages]);
+
+    // Create session and load existing sessions on mount
+    useEffect(() => {
+        const initializeChat = async () => {
+            if (user?.id) {
+                // Load existing sessions first
+                await loadSessions(user.id);
+
+                // Always create a new session when chat starts
+                if (!currentSession) {
+                    await createNewSession(user.id, 'New Chat');
+                }
+            }
+        };
+
+        initializeChat();
+    }, [user?.id]);
+
+    // Speak initial welcome message when component loads
+    useEffect(() => {
+        if (messages.length > 0 && messages[0].sender === 'tutor') {
+            // Delay to ensure page is fully loaded
+            const timer = setTimeout(() => {
+                speakText(messages[0].text);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     // Function to speak text using speech synthesis
     const speakText = (text: string) => {
@@ -180,8 +239,17 @@ export default function TutorPage() {
             }
         }
 
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
         speechSynthesisRef.current = utterance;
         window.speechSynthesis.speak(utterance);
+    };
+
+    const stopSpeaking = () => {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
     };
 
     const scrollToBottom = () => {
@@ -223,11 +291,18 @@ export default function TutorPage() {
         };
 
         setMessages(prev => [...prev, userMessage]);
+
+        // Save to chat store
+        addStoredMessage({
+            type: 'user',
+            content: message.trim(),
+        });
+
         setMessage('');
         setIsProcessing(true);
 
         try {
-            const response = await askAI(userMessage.text);
+            const response = await askAI(userMessage.text, currentSession?.id);
 
             if (response.success) {
                 const tutorMessage: Message = {
@@ -237,6 +312,12 @@ export default function TutorPage() {
                     timestamp: new Date()
                 };
                 setMessages(prev => [...prev, tutorMessage]);
+
+                // Save to chat store
+                addStoredMessage({
+                    type: 'ai',
+                    content: response.data.answer,
+                });
 
                 // Automatically speak the tutor's response
                 speakText(response.data.answer);
@@ -296,26 +377,53 @@ export default function TutorPage() {
             const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
             const recognition = new SpeechRecognition();
 
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            recognition.continuous = true;
+            recognition.interimResults = true;
             recognition.lang = 'en-US';
 
-            recognition.onresult = async (event: any) => {
-                const transcript = event.results[0][0].transcript;
-                
-                if (recordingIntervalRef.current) {
-                    clearInterval(recordingIntervalRef.current);
-                }
-                setIsRecording(false);
-                setRecordingTime(0);
+            let finalTranscript = '';
+            let hasProcessedResult = false;
 
-                // Send the transcribed text to AI
-                await handleTranscribedText(transcript);
+            recognition.onresult = async (event: any) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // Clear any existing silence timeout
+                if (silenceTimeoutRef.current) {
+                    clearTimeout(silenceTimeoutRef.current);
+                }
+
+                // Set a new timeout to process after 1.5 seconds of silence
+                silenceTimeoutRef.current = setTimeout(async () => {
+                    if (finalTranscript.trim() && !hasProcessedResult) {
+                        hasProcessedResult = true;
+                        recognition.stop();
+
+                        if (recordingIntervalRef.current) {
+                            clearInterval(recordingIntervalRef.current);
+                        }
+                        setIsRecording(false);
+                        setRecordingTime(0);
+
+                        // Send the transcribed text to AI
+                        await handleTranscribedText(finalTranscript.trim());
+                    }
+                }, 1500);
             };
+
+            recognitionRef.current = recognition;
 
             recognition.onerror = (event: any) => {
                 console.error('Speech recognition error:', event.error);
-                
+
                 if (recordingIntervalRef.current) {
                     clearInterval(recordingIntervalRef.current);
                 }
@@ -372,6 +480,12 @@ export default function TutorPage() {
     };
 
     const stopRecording = () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+        }
         if (recordingIntervalRef.current) {
             clearInterval(recordingIntervalRef.current);
         }
@@ -408,9 +522,15 @@ export default function TutorPage() {
         };
         setMessages(prev => [...prev, userMessage]);
 
+        // Save to chat store
+        addStoredMessage({
+            type: 'user',
+            content: transcript,
+        });
+
         try {
             // Send transcribed text to AI
-            const response = await askAI(transcript);
+            const response = await askAI(transcript, currentSession?.id);
 
             if (response.success) {
                 // Add tutor response
@@ -422,10 +542,16 @@ export default function TutorPage() {
                 };
                 setMessages(prev => [...prev, tutorMessage]);
 
+                // Save to chat store
+                addStoredMessage({
+                    type: 'ai',
+                    content: response.data.answer,
+                });
+
                 // Auto-speak in voice mode
                 if (isVoiceMode) {
                     speakText(response.data.answer);
-                    
+
                     // If continuous mode, wait for speech to finish then start listening again
                     if (isContinuousMode) {
                         // Wait for speech to complete before starting next recording
@@ -452,7 +578,7 @@ export default function TutorPage() {
                     timestamp: new Date()
                 };
                 setMessages(prev => [...prev, errorMessage]);
-                
+
                 if (isVoiceMode) {
                     speakText(errorMessage.text);
                 }
@@ -465,7 +591,7 @@ export default function TutorPage() {
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
-            
+
             if (isVoiceMode) {
                 speakText(errorMessage.text);
             }
@@ -595,7 +721,7 @@ export default function TutorPage() {
                                     </button>
                                     <span className="material-symbols-outlined text-3xl lg:text-5xl text-[#f9f506]">school</span>
                                     <div>
-                                        <h1 className="text-2xl lg:text-4xl font-bold">AI Tutor</h1>
+                                        <h1 className="text-2xl lg:text-4xl font-bold">OgaTicha</h1>
                                         <p className="hidden lg:block text-white/80 mt-1">
                                             {isVoiceMode
                                                 ? (isContinuousMode ? '🎤 Continuous Conversation Active' : '🎤 Voice Mode Active')
@@ -605,6 +731,24 @@ export default function TutorPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 lg:gap-3">
+                                    <button
+                                        onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
+                                        className="flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all bg-white/20 hover:bg-white/30 text-white"
+                                        title="Chat History"
+                                    >
+                                        <span className="material-symbols-outlined">history</span>
+                                        <span className="hidden lg:inline">History</span>
+                                    </button>
+                                    {isSpeaking && (
+                                        <button
+                                            onClick={stopSpeaking}
+                                            className="flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all bg-red-500 hover:bg-red-600 text-white"
+                                            title="Stop Voice"
+                                        >
+                                            <span className="material-symbols-outlined">stop_circle</span>
+                                            <span className="hidden lg:inline">Stop</span>
+                                        </button>
+                                    )}
                                     {isVoiceMode && (
                                         <button
                                             onClick={toggleContinuousMode}
@@ -841,6 +985,108 @@ export default function TutorPage() {
                         </div>
                     </div>
                 </main>
+
+                {/* Chat History Sidebar */}
+                {isChatHistoryOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-50"
+                        onClick={() => setIsChatHistoryOpen(false)}
+                    />
+                )}
+                <aside className={`fixed top-0 right-0 h-screen w-80 bg-white border-l-2 border-gray-200 flex flex-col z-50 transition-transform duration-300 ${isChatHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    {/* Header */}
+                    <div className="p-4 border-b-2 border-gray-200 flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-[#181811]">Chat History</h2>
+                        <button
+                            onClick={() => setIsChatHistoryOpen(false)}
+                            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                        >
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+
+                    {/* New Chat Button */}
+                    <div className="p-4 border-b-2 border-gray-200">
+                        <button
+                            onClick={async () => {
+                                if (user?.id) {
+                                    await createNewSession(user.id, 'New Chat');
+                                    setIsChatHistoryOpen(false);
+                                }
+                            }}
+                            className="w-full px-4 py-3 bg-[#f9f506] hover:bg-[#e6e205] rounded-xl font-semibold text-[#181811] flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                            New Chat
+                        </button>
+                    </div>
+
+                    {/* Sessions List */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        {sessions.length === 0 ? (
+                            <div className="text-center text-gray-500 mt-8">
+                                <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
+                                <p className="text-sm">No chat history yet</p>
+                            </div>
+                        ) : (
+                            sessions.map((session) => (
+                                <div
+                                    key={session.id}
+                                    onClick={() => {
+                                        loadSession(session.id);
+                                        setIsChatHistoryOpen(false);
+                                    }}
+                                    className={`group relative p-3 rounded-xl cursor-pointer transition-all ${currentSession?.id === session.id
+                                        ? 'bg-[#f9f506]/20 border-2 border-[#f9f506]'
+                                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                        }`}
+                                >
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                        <h3 className="font-semibold text-[#181811] text-sm truncate flex-1">
+                                            {session.title}
+                                        </h3>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const newTitle = prompt('Enter new title:', session.title);
+                                                    if (newTitle && newTitle.trim() && newTitle !== session.title) {
+                                                        updateSessionTitle(session.id, newTitle.trim());
+                                                    }
+                                                }}
+                                                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                                title="Rename"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm('Are you sure you want to delete this chat?')) {
+                                                        deleteSession(session.id);
+                                                    }
+                                                }}
+                                                className="p-1 hover:bg-red-100 rounded transition-colors"
+                                                title="Delete"
+                                            >
+                                                <span className="material-symbols-outlined text-sm text-red-600">delete</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-xs">chat</span>
+                                            {session.messages?.length || 0} messages
+                                        </span>
+                                        <span>
+                                            {new Date(session.updated_at).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </aside>
             </div>
         </ProtectedRoute>
     );

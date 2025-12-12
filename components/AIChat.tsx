@@ -1,19 +1,16 @@
 // Example AI Chat Component - Can be integrated into classroom page
 // This demonstrates full API integration with text, voice, and image upload
+// Now with chat session persistence
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAskAI, useUploadNote } from '@/hooks/useAPI';
+import { useChatStore } from '@/lib/store/chatStore';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function AIChat() {
     const [question, setQuestion] = useState('');
-    const [messages, setMessages] = useState<Array<{
-        type: 'user' | 'ai';
-        content: string;
-        timestamp: Date;
-    }>>([]);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [isVoiceMode, setIsVoiceMode] = useState(true); // Voice mode is default
@@ -22,28 +19,154 @@ export default function AIChat() {
     const { loading: textLoading, error: textError, ask } = useAskAI();
     const { loading: uploadLoading, error: uploadError, upload } = useUploadNote();
 
-    const userId = ''; // Get from auth context/localStorage
+    // Store hooks
+    const { user } = useAuthStore();
+    const {
+        messages,
+        currentSession,
+        isLoading: sessionLoading,
+        addMessage,
+        createNewSession,
+        loadSessions,
+    } = useChatStore();
+
+    const userId = user?.id || '';
+    const chatId = currentSession?.id || '';
+
+    // Format markdown-style text to JSX
+    const formatMessage = (text: string) => {
+        const lines = text.split('\n');
+        const elements: JSX.Element[] = [];
+        let currentListItems: string[] = [];
+        let key = 0;
+
+        const flushList = () => {
+            if (currentListItems.length > 0) {
+                elements.push(
+                    <ul key={`list-${key++}`} className="list-disc list-inside space-y-1 my-2">
+                        {currentListItems.map((item, i) => (
+                            <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+                        ))}
+                    </ul>
+                );
+                currentListItems = [];
+            }
+        };
+
+        const formatInlineMarkdown = (line: string) => {
+            return line
+                // Bold text **text** or __text__
+                .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold">$1</strong>')
+                .replace(/__(.+?)__/g, '<strong class="font-bold">$1</strong>')
+                // Italic text *text* or _text_
+                .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
+                .replace(/_(.+?)_/g, '<em class="italic">$1</em>')
+                // Inline code `code`
+                .replace(/`(.+?)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>');
+        };
+
+        lines.forEach((line, index) => {
+            // Heading 1: # Title
+            if (line.match(/^#\s+(.+)/)) {
+                flushList();
+                const title = line.replace(/^#\s+/, '');
+                elements.push(
+                    <h1 key={key++} className="text-2xl font-bold mt-4 mb-2">
+                        {title}
+                    </h1>
+                );
+            }
+            // Heading 2: ## Title
+            else if (line.match(/^##\s+(.+)/)) {
+                flushList();
+                const title = line.replace(/^##\s+/, '');
+                elements.push(
+                    <h2 key={key++} className="text-xl font-bold mt-3 mb-2">
+                        {title}
+                    </h2>
+                );
+            }
+            // Heading 3: ### Title
+            else if (line.match(/^###\s+(.+)/)) {
+                flushList();
+                const title = line.replace(/^###\s+/, '');
+                elements.push(
+                    <h3 key={key++} className="text-lg font-bold mt-3 mb-1">
+                        {title}
+                    </h3>
+                );
+            }
+            // List item: - item or * item
+            else if (line.match(/^[\-\*]\s+(.+)/)) {
+                const item = line.replace(/^[\-\*]\s+/, '');
+                currentListItems.push(item);
+            }
+            // Numbered list: 1. item
+            else if (line.match(/^\d+\.\s+(.+)/)) {
+                flushList();
+                const item = line.replace(/^\d+\.\s+/, '');
+                if (currentListItems.length === 0) {
+                    elements.push(
+                        <ol key={`ol-${key++}`} className="list-decimal list-inside space-y-1 my-2">
+                            <li dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+                        </ol>
+                    );
+                }
+            }
+            // Code block: ```code```
+            else if (line.match(/^```/)) {
+                flushList();
+                // Skip code block markers for now (could be enhanced)
+            }
+            // Regular paragraph
+            else if (line.trim() !== '') {
+                flushList();
+                elements.push(
+                    <p
+                        key={key++}
+                        className="mb-2"
+                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(line) }}
+                    />
+                );
+            }
+            // Empty line
+            else {
+                flushList();
+                if (index > 0 && index < lines.length - 1) {
+                    elements.push(<div key={key++} className="h-2" />);
+                }
+            }
+        });
+
+        flushList();
+        return elements.length > 0 ? elements : <p>{text}</p>;
+    };
+
+    // Initialize: load sessions
+    useEffect(() => {
+        if (userId) {
+            loadSessions(userId);
+        }
+    }, [userId, loadSessions]);
 
     // Handle text question
     const handleAskQuestion = async () => {
-        if (!question.trim()) return;
+        if (!question.trim() || !chatId) return;
 
-        // Add user message
-        setMessages(prev => [...prev, {
+        // Add user message to store
+        addMessage({
             type: 'user',
             content: question,
-            timestamp: new Date(),
-        }]);
+        });
 
-        const response = await ask(question, userId);
+        const response = await ask(question, chatId);
 
         if (response) {
-            // Add AI response
-            setMessages(prev => [...prev, {
+            // Add AI response to store
+            addMessage({
                 type: 'ai',
                 content: response.answer,
-                timestamp: new Date(),
-            }]);
+            });
         }
 
         setQuestion('');
@@ -52,24 +175,22 @@ export default function AIChat() {
     // Handle image upload
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file || !chatId) return;
 
-        // Add user message
-        setMessages(prev => [...prev, {
+        // Add user message to store
+        addMessage({
             type: 'user',
             content: `📷 Uploaded image: ${file.name}`,
-            timestamp: new Date(),
-        }]);
+        });
 
-        const response = await upload(file, userId);
+        const response = await upload(file, chatId);
 
         if (response) {
-            // Add AI transcription
-            setMessages(prev => [...prev, {
+            // Add AI transcription to store
+            addMessage({
                 type: 'ai',
                 content: response.transcription,
-                timestamp: new Date(),
-            }]);
+            });
         }
 
         // Reset file input
@@ -100,23 +221,21 @@ export default function AIChat() {
                 const transcript = event.results[0][0].transcript;
                 setIsRecording(false);
 
-                // Add user message with transcribed text
-                setMessages(prev => [...prev, {
+                // Add user message with transcribed text to store
+                addMessage({
                     type: 'user',
                     content: transcript,
-                    timestamp: new Date(),
-                }]);
+                });
 
                 // Send transcribed text to AI
-                const response = await ask(transcript, userId);
+                const response = await ask(transcript, chatId);
 
                 if (response) {
-                    // Add AI response
-                    setMessages(prev => [...prev, {
+                    // Add AI response to store
+                    addMessage({
                         type: 'ai',
                         content: response.answer,
-                        timestamp: new Date(),
-                    }]);
+                    });
                 }
             };
 
@@ -164,7 +283,7 @@ export default function AIChat() {
 
                 {messages.map((msg, idx) => (
                     <div
-                        key={idx}
+                        key={msg.id || idx}
                         className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                         <div
@@ -173,9 +292,11 @@ export default function AIChat() {
                                 : 'bg-white text-[#181811] border-2 border-gray-200'
                                 }`}
                         >
-                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                            <div className="whitespace-pre-wrap">
+                                {msg.type === 'ai' ? formatMessage(msg.content) : msg.content}
+                            </div>
                             <p className="text-xs opacity-60 mt-2">
-                                {msg.timestamp.toLocaleTimeString()}
+                                {new Date(msg.timestamp).toLocaleTimeString()}
                             </p>
                         </div>
                     </div>

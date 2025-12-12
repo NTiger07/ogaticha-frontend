@@ -84,6 +84,60 @@ export interface DownloadOfflinePackResponse {
   notes: Note[];
 }
 
+// ========== Chat Session Types ==========
+
+export interface ChatMessage {
+  id: string;
+  type: "user" | "ai";
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatSession {
+  id: string;
+  user_id: string;
+  title: string;
+  messages: ChatMessage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSessionRequest {
+  user_id: string;
+  title?: string;
+}
+
+export interface CreateSessionResponse {
+  status: "success";
+  session: ChatSession;
+}
+
+export interface GetSessionsResponse {
+  status: "success";
+  sessions: ChatSession[];
+}
+
+export interface GetSessionResponse {
+  status: "success";
+  session: ChatSession;
+}
+
+export interface UpdateSessionRequest {
+  session_id: string;
+  messages?: ChatMessage[];
+  title?: string;
+}
+
+export interface UpdateSessionResponse {
+  status: "success";
+  session: ChatSession;
+}
+
+export interface DeleteSessionResponse {
+  status: "success";
+  message: string;
+}
+
 // ========== General Error Type ==========
 
 export interface APIError {

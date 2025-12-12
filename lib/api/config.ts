@@ -27,6 +27,10 @@ export const API_CONFIG = {
     UPLOAD_NOTE: "/api/classroom/upload-note",
     VOICE_COMMAND: "/api/classroom/voice-command",
 
+    // Chat Sessions
+    CHAT_SESSIONS: "/api/chat",
+    CHAT_SESSION: (sessionId: string) => `/api/chat/sessions/${sessionId}`,
+
     // Sync/Offline
     DOWNLOAD_PACK: "/api/sync/download-pack",
   },
