@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import { sendVoiceCommand, recordAudio, askAI, uploadNote } from '../../lib/api/classroom';
+import { askAI, uploadNote } from '../../lib/api/classroom';
 import { useAuthStore } from '@/lib/store/authStore';
 
 interface Message {
@@ -271,6 +271,18 @@ export default function TutorPage() {
     const startRecording = async () => {
         if (isRecording) return;
 
+        // Check if speech recognition is supported
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            const errorMessage: Message = {
+                id: Date.now().toString(),
+                sender: 'tutor',
+                text: 'Sorry, speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.',
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            return;
+        }
+
         setIsRecording(true);
         setIsWaitingForSpeech(false);
         setRecordingTime(0);
@@ -280,18 +292,65 @@ export default function TutorPage() {
         }, 1000);
 
         try {
-            const audioFile = await recordAudio(30000); // 30 seconds max
+            // Use Web Speech API for speech recognition
+            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+            const recognition = new SpeechRecognition();
 
-            if (recordingIntervalRef.current) {
-                clearInterval(recordingIntervalRef.current);
-            }
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
 
-            setIsRecording(false);
-            setRecordingTime(0);
+            recognition.onresult = async (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                
+                if (recordingIntervalRef.current) {
+                    clearInterval(recordingIntervalRef.current);
+                }
+                setIsRecording(false);
+                setRecordingTime(0);
 
-            if (audioFile) {
-                await handleVoiceCommand(audioFile);
-            }
+                // Send the transcribed text to AI
+                await handleTranscribedText(transcript);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                
+                if (recordingIntervalRef.current) {
+                    clearInterval(recordingIntervalRef.current);
+                }
+                setIsRecording(false);
+                setRecordingTime(0);
+                shouldContinueListeningRef.current = false;
+                setIsContinuousMode(false);
+
+                let errorText = 'Sorry, there was an error with speech recognition.';
+                if (event.error === 'not-allowed') {
+                    errorText = 'Please allow microphone access to use voice mode.';
+                } else if (event.error === 'no-speech') {
+                    errorText = 'No speech detected. Please try again.';
+                } else if (event.error === 'audio-capture') {
+                    errorText = 'No microphone found. Please check your audio devices.';
+                }
+
+                const errorMessage: Message = {
+                    id: Date.now().toString(),
+                    sender: 'tutor',
+                    text: errorText,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, errorMessage]);
+            };
+
+            recognition.onend = () => {
+                if (recordingIntervalRef.current) {
+                    clearInterval(recordingIntervalRef.current);
+                }
+                setIsRecording(false);
+                setRecordingTime(0);
+            };
+
+            recognition.start();
         } catch (error) {
             console.error('Recording error:', error);
             if (recordingIntervalRef.current) {
@@ -305,7 +364,7 @@ export default function TutorPage() {
             const errorMessage: Message = {
                 id: Date.now().toString(),
                 sender: 'tutor',
-                text: 'Sorry, I couldn\'t access your microphone. Please check your permissions.',
+                text: 'Sorry, speech recognition is not available. Please try typing your message.',
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -337,61 +396,79 @@ export default function TutorPage() {
         }
     };
 
-    const handleVoiceCommand = async (audioFile: File) => {
+    const handleTranscribedText = async (transcript: string) => {
         setIsProcessing(true);
 
+        // Add user message with transcription
         const userMessage: Message = {
             id: Date.now().toString(),
             sender: 'user',
-            text: '🎤 Voice message...',
+            text: transcript,
             timestamp: new Date()
         };
         setMessages(prev => [...prev, userMessage]);
 
         try {
-            const response = await sendVoiceCommand(audioFile);
+            // Send transcribed text to AI
+            const response = await askAI(transcript);
 
             if (response.success) {
-                // Update user message with transcription
-                setMessages(prev => prev.map(msg =>
-                    msg.id === userMessage.id
-                        ? { ...msg, text: response.data.user_said }
-                        : msg
-                ));
-
-                // Add tutor response with audio
+                // Add tutor response
                 const tutorMessage: Message = {
                     id: (Date.now() + 1).toString(),
                     sender: 'tutor',
-                    text: response.data.ai_text,
-                    audioUrl: response.data.ai_audio_url,
+                    text: response.data.answer,
                     timestamp: new Date()
                 };
                 setMessages(prev => [...prev, tutorMessage]);
 
-                // Auto-play audio in voice mode
-                if (isVoiceMode && response.data.ai_audio_url) {
-                    playAudio(response.data.ai_audio_url, true);
+                // Auto-speak in voice mode
+                if (isVoiceMode) {
+                    speakText(response.data.answer);
+                    
+                    // If continuous mode, wait for speech to finish then start listening again
+                    if (isContinuousMode) {
+                        // Wait for speech to complete before starting next recording
+                        const utterance = speechSynthesisRef.current;
+                        if (utterance) {
+                            utterance.onend = () => {
+                                if (shouldContinueListeningRef.current) {
+                                    setIsWaitingForSpeech(true);
+                                    setTimeout(() => {
+                                        if (shouldContinueListeningRef.current) {
+                                            startRecording();
+                                        }
+                                    }, 1500);
+                                }
+                            };
+                        }
+                    }
                 }
             } else {
-                setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
                 const errorMessage: Message = {
                     id: (Date.now() + 1).toString(),
                     sender: 'tutor',
-                    text: 'Sorry, there was an error processing your voice message. Please try again.',
+                    text: 'Sorry, there was an error processing your message. Please try again.',
                     timestamp: new Date()
                 };
                 setMessages(prev => [...prev, errorMessage]);
+                
+                if (isVoiceMode) {
+                    speakText(errorMessage.text);
+                }
             }
         } catch (error) {
-            setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 sender: 'tutor',
-                text: 'Sorry, there was an error processing your voice message. Please try again.',
+                text: 'Sorry, there was an error processing your message. Please try again.',
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
+            
+            if (isVoiceMode) {
+                speakText(errorMessage.text);
+            }
         } finally {
             setIsProcessing(false);
         }

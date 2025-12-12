@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface VoiceModeOptions {
   text: string;
@@ -6,7 +6,24 @@ interface VoiceModeOptions {
   pitch?: number;
 }
 
+interface SpeechRecognitionOptions {
+  onResult: (transcript: string) => void;
+  onError?: (error: string) => void;
+  onStart?: () => void;
+  onEnd?: () => void;
+  continuous?: boolean;
+  language?: string;
+}
+
 export function useVoiceMode(enabled: boolean) {
+  const recognitionRef = useRef<any>(null);
+
+  // Check if speech recognition is supported
+  const isSpeechRecognitionSupported = () => {
+    if (typeof window === 'undefined') return false;
+    return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  };
+
   // Speak text using Web Speech API
   const speak = (options: VoiceModeOptions) => {
     if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -38,15 +55,73 @@ export function useVoiceMode(enabled: boolean) {
     });
   };
 
-  // Listen for voice commands (simplified - can be extended)
-  useEffect(() => {
-    if (!enabled || typeof window === 'undefined' || !('webkitSpeechRecognition' in window && 'SpeechRecognition' in window)) {
+  // Start speech recognition
+  const startListening = (options: SpeechRecognitionOptions) => {
+    if (!enabled || !isSpeechRecognitionSupported()) {
+      options.onError?.('Speech recognition is not supported in this browser');
       return;
     }
 
-    // Voice commands feature can be extended here
-    // For now, we'll keep it simple with just TTS functionality
-  }, [enabled]);
+    try {
+      // Stop any existing recognition
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
 
-  return { speak, announce };
+      // Create new recognition instance
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognition = new SpeechRecognition();
+
+      recognition.continuous = options.continuous ?? false;
+      recognition.interimResults = false;
+      recognition.lang = options.language ?? 'en-US';
+
+      recognition.onstart = () => {
+        options.onStart?.();
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        options.onResult(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        options.onError?.(event.error);
+      };
+
+      recognition.onend = () => {
+        options.onEnd?.();
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (error) {
+      console.error('Speech recognition error:', error);
+      options.onError?.('Failed to start speech recognition');
+    }
+  };
+
+  // Stop speech recognition
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopListening();
+    };
+  }, []);
+
+  return { 
+    speak, 
+    announce, 
+    startListening, 
+    stopListening,
+    isSpeechRecognitionSupported: isSpeechRecognitionSupported()
+  };
 }
