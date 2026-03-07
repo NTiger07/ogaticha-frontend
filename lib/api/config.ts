@@ -4,7 +4,7 @@ export const API_CONFIG = {
   // Base URLs
   BASE_URL:
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://ogaticha-backend-api.onrender.com",
+    (typeof window !== "undefined" ? "/api-proxy" : "https://ogaticha-backend-api.onrender.com"),
   LOCAL_URL: "http://localhost:8080",
 
   // Endpoints
