@@ -34,7 +34,10 @@ export async function loginUser(
   data: LoginRequest
 ): Promise<APIResponse<LoginResponse>> {
   try {
-    const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.LOGIN), {
+    const url = getApiUrl(API_CONFIG.ENDPOINTS.LOGIN);
+    console.log(`[API] Fetching login: ${url}`);
+
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,13 +45,35 @@ export async function loginUser(
       body: JSON.stringify(data),
     });
 
-    const responseData = await response.json();
+    const contentType = response.headers.get("content-type");
+    let responseData;
+
+    // Attempt to parse as JSON regardless of header if we want to be super safe,
+    // or better, try-catch the JSON parsing.
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        const text = await response.text();
+        return {
+          success: false,
+          error: `Invalid JSON Response (${response.status}): ${text.slice(0, 100)}...`,
+        };
+      }
+    } else {
+      // If not JSON, it's likely an HTML error page (500, 404, etc.)
+      const text = await response.text();
+      return {
+        success: false,
+        error: `Server Error (${response.status}): ${text.slice(0, 100)}...`,
+      };
+    }
 
     if (!response.ok) {
       const errorData = responseData as APIError;
       return {
         success: false,
-        error: errorData.error || "Login failed",
+        error: errorData.error || `Login failed with status ${response.status}`,
       };
     }
 
@@ -60,7 +85,7 @@ export async function loginUser(
     console.error("Login error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Network error occurred",
+      error: error instanceof Error ? `Connection Error: ${error.message}` : "Network error occurred",
     };
   }
 }
@@ -80,13 +105,24 @@ export async function registerUser(
       body: JSON.stringify(data),
     });
 
-    const responseData = await response.json();
+    const contentType = response.headers.get("content-type");
+    let responseData;
+
+    if (contentType && contentType.includes("application/json")) {
+      responseData = await response.json();
+    } else {
+      const text = await response.text();
+      return {
+        success: false,
+        error: `Server Error (${response.status}): ${text.slice(0, 100)}...`,
+      };
+    }
 
     if (!response.ok) {
       const errorData = responseData as APIError;
       return {
         success: false,
-        error: errorData.error || "Registration failed",
+        error: errorData.error || `Registration failed with status ${response.status}`,
       };
     }
 
@@ -98,7 +134,7 @@ export async function registerUser(
     console.error("Registration error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Network error occurred",
+      error: error instanceof Error ? `Connection Error: ${error.message}` : "Network error occurred",
     };
   }
 }

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { registerUser } from '@/lib/api/auth';
-import { useAuthStore } from '@/lib/store/authStore';
+import { registerUser } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
 import { DisabilityType, PreferredMode } from '@/lib/types/api';
 
 interface RegisterData {

@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a148c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b1fa2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" />
+      <feOffset dx="0" dy="10" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#grad1)" />
+  
+  <!-- Yellow Accent -->
+  <path d="M256 40C136.7 40 40 136.7 40 256C40 375.3 136.7 472 256 472C375.3 472 472 375.3 472 256C472 136.7 375.3 40 256 40ZM256 440C154.4 440 72 357.6 72 256C72 154.4 154.4 72 256 72C357.6 72 440 154.4 440 256C440 357.6 357.6 440 256 440Z" fill="#f9f506" opacity="0.2"/>
+  
+  <!-- Graduation Cap Icon -->
+  <g filter="url(#shadow)">
+    <path d="M256 120L64 200L256 280L448 200L256 120Z" fill="#f9f506" />
+    <path d="M112 220V320C112 320 160 360 256 360C352 360 400 320 400 320V220L256 280L112 220Z" fill="#f9f506" />
+    <!-- Tassel -->
+    <path d="M448 200V300C448 310 440 320 430 320C420 320 412 310 412 300V215" stroke="#f9f506" stroke-width="8" stroke-linecap="round" />
+    <circle cx="430" cy="330" r="12" fill="#f9f506" />
+  </g>
+  
+  <!-- Accessibility Symbol Intertwined -->
+  <circle cx="256" cy="220" r="25" fill="#4a148c" />
+  <path d="M256 250C220 250 190 270 180 300C170 330 190 360 220 360H292C322 360 342 330 332 300C322 270 292 250 256 250Z" fill="#4a148c" />
+</svg>

@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api-proxy/:path*',
+        destination: 'https://ogaticha-backend-api.onrender.com/:path*',
+      },
+    ];
+  },
 };
 
 export default withPWA({
