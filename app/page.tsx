@@ -103,10 +103,10 @@ const Navbar = () => {
           ))}
           <div className="flex items-center gap-4 ml-4">
             <Link href="/auth/login">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost" className="cursor-pointer">Sign In</Button>
             </Link>
             <Link href="/classroom">
-              <Button size="sm">Get Started</Button>
+              <Button size="sm" className="cursor-pointer">Get Started</Button>
             </Link>
           </div>
         </div>

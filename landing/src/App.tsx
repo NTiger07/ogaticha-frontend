@@ -47,7 +47,7 @@ const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HT
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-full transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
+          'cursor-pointer inline-flex items-center justify-center rounded-full transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
           variants[variant],
           sizes[size],
           className
@@ -189,10 +189,10 @@ const Hero = () => {
             OgaTicha empowers students with disabilities by transforming traditional learning materials into accessible formats. Through voice-first AI tutoring, intelligent document processing, and offline accessibility, every student can learn without barriers.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="rounded-full px-10">
+            <Button size="lg" className="cursor-pointer rounded-full px-10">
               Get Started <ChevronRight className="ml-2 w-5 h-5" />
             </Button>
-            <Button variant="outline" size="lg" className="rounded-full px-10">
+            <Button variant="outline" size="lg" className="cursor-pointer rounded-full px-10">
               Sign In
             </Button>
           </div>
